@@ -1,0 +1,56 @@
+import { defineStore } from 'pinia';
+import type { SiteConfig } from '@/types/site';
+
+export const useSiteStore = defineStore('site', {
+  state: (): SiteConfig => ({
+    name: 'Joseph Center',
+    logo: '',
+    darkLogo: '',
+    tagline: '',
+    contactEmail: 'mhighline@josephcentergj.com',
+    contactPhone: '',
+    address: '',
+    ctaLabel: '',
+    ctaUrl: '/contact',
+    ctaHeadline: 'Ready to get started?',
+    ctaSubtext: 'Let\'s build something great together.',
+    ctaFooterLabel: '',
+    ctaFooterUrl: '',
+    copyrightText: '',
+    primaryNav: [
+      { label: 'Home', to: '/' },
+      { label: 'About', to: '/about' },
+      { label: 'Contact', to: '/contact' },
+      { label: 'Donate', to: '/donate' },
+      { label: 'Media', to: '/media' },
+      { label: 'Programs', to: '/programs' },
+      { label: 'Our Story', to: '/our-story' },
+    ],
+    footerNav: [
+      { label: 'Our Board', to: '/board' },
+      { label: 'Our Staff', to: '/staff' },
+      { label: 'Testimonies', to: '/testimonies' },
+      { label: 'Events', to: '/events' },
+      { label: 'Transparency', to: '/transparency' },
+    ],
+    legalNav: [
+      { label: 'Privacy Policy', to: '/privacy-policy' },
+      { label: 'Terms & Conditions', to: '/terms-and-conditions' },
+      { label: 'Accessibility Statement', to: '/accessibility' },
+    ],
+    socialLinks: [],
+    headerNav: [
+      { label: 'Home', href: '/' },
+      { label: 'About', href: '/about' },
+      { label: 'Contact', href: '/contact' },
+      { label: 'Donate', href: '/donate' },
+      { label: 'Volunteer Form', href: '/forms/volunteer' },
+      { label: 'Referral Form', href: '/forms/referral' },
+      { label: 'Media', href: '/media' },
+      { label: 'Programs', href: '/programs' },
+      { label: 'Our Story', href: '/our-story' },
+    ],
+    volunteerUrl: '/forms/volunteer',
+    donateUrl: '/donate',
+  }),
+});

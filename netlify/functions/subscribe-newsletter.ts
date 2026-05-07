@@ -1,0 +1,65 @@
+import type { Handler } from '@netlify/functions';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+/**
+ * Subscribes an email to the configured AWeber list with tag: newsletter.
+ * Requires OAuth access token — for v1 we use the AWeber direct subscriber endpoint
+ * via the access token stored at AWEBER_ACCESS_TOKEN (refresh handled out-of-band).
+ */
+export const handler: Handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
+  }
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const { email, name } = body;
+
+    if (!email) {
+      return { statusCode: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'email is required' }) };
+    }
+
+    const accessToken = process.env.AWEBER_ACCESS_TOKEN;
+    const accountId = process.env.AWEBER_ACCOUNT_ID;
+    const listId = process.env.AWEBER_LIST_ID;
+
+    if (!accessToken || !accountId || !listId) {
+      return { statusCode: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'AWeber credentials not configured' }) };
+    }
+
+    const res = await fetch(
+      `https://api.aweber.com/1.0/accounts/${accountId}/lists/${listId}/subscribers`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          ...(name ? { name } : {}),
+          tags: ['newsletter'],
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('AWeber error:', text);
+      return { statusCode: 502, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Subscription failed' }) };
+    }
+
+    return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: true }) };
+  } catch (err) {
+    console.error('subscribe-newsletter error:', err);
+    return { statusCode: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Failed to subscribe' }) };
+  }
+};
