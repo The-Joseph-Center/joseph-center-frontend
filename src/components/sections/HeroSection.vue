@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSiteStore } from '@/stores/useSiteStore';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import SiteAmbience from '@/components/layout/SiteAmbience.vue';
+import SiteBanner from '@/components/layout/SiteBanner.vue';
 import { sanityImage } from '@/composables/useSanityImage';
 
 const props = defineProps({ section: { type: Object, default: null } });
@@ -19,24 +20,64 @@ function onHeroMouseMove(e) {
 
 const heroStyle = computed(() => {
   const img = props.section?.image;
-  if (!img) return {};
-  const url = sanityImage(img).width(1920).fit('crop').auto('format').url();
-  return { '--hero-image': `url(${url})` };
+  const minHeight = props.section?.minHeight || '480px';
+  const base = { minHeight };
+  if (!img) return base;
+  const url = sanityImage(img).width(1920).auto('format').url();
+  const x = (img.hotspot?.x ?? 0.5) * 100;
+  const y = (img.hotspot?.y ?? 0.5) * 100;
+  return {
+    ...base,
+    '--hero-image': `url(${url})`,
+    '--hero-position': `${x}% ${y}%`,
+  };
 });
+
+const align = computed(() => props.section?.align || 'center');
+
+const flexClasses = computed(() => {
+  switch (align.value) {
+    case 'right': return 'items-end justify-end';
+    case 'left':  return 'items-end justify-start';
+    default:      return 'items-center justify-center';
+  }
+});
+
+const textClasses = computed(() => {
+  switch (align.value) {
+    case 'right': return 'text-right';
+    case 'left':  return 'text-left';
+    default:      return 'text-center translate-y-8';
+  }
+});
+
+// Stripe defaults to true; can be disabled per-section via section.showStripe = false
+const showStripe = computed(() => props.section?.showStripe !== false);
+const stripeColor = computed(() => props.section?.stripeColor || 'gold');
 
 onMounted(() => { heroRef.value?.addEventListener('mousemove', onHeroMouseMove); });
 onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseMove); });
 </script>
 
 <template>
-  <section ref="heroRef" class="hero relative flex items-center justify-center min-h-[480px] px-6 py-24 overflow-hidden" :style="heroStyle" :aria-label="section?.imageAlt || undefined">
+  <section
+    ref="heroRef"
+    class="hero relative flex px-6 py-24 overflow-hidden"
+    :class="flexClasses"
+    :style="heroStyle"
+    :aria-label="section?.imageAlt || undefined"
+  >
     <SiteAmbience variant="hero" />
-    <div class="relative z-10 text-center text-white max-w-3xl mx-auto">
-      <h1 v-if="section?.title || site.name" class="text-5xl font-extrabold leading-tight mb-4">{{ section?.title || site.name }}</h1>
-      <p v-if="section?.subtitle || site.tagline" class="text-xl opacity-80 mb-8">{{ section?.subtitle || site.tagline }}</p>
+    <div class="relative z-10 text-white max-w-3xl" :class="textClasses">
+      <h1 v-if="section?.title || site.name" class="text-5xl font-extrabold leading-tight mb-4 text-white whitespace-pre-line">{{ section?.title || site.name }}</h1>
+      <p v-if="section?.subtitle || site.tagline" class="text-xl opacity-80 mb-8 text-white">{{ section?.subtitle || site.tagline }}</p>
       <SmartLink v-if="section?.cta?.label && section?.cta?.url" :to="section.cta.url" class="focus-ring-light inline-block border-2 border-white text-white font-semibold px-8 py-3 rounded-lg hover:bg-white hover:text-[var(--color-primary)] transition-colors">{{ section.cta.label }}</SmartLink>
     </div>
+    <div v-if="showStripe" class="hero-stripe" :class="`hero-stripe--${stripeColor}`" aria-hidden="true"></div>
   </section>
+  <!-- Site-wide announcement banner sits directly under the hero on every
+       page that has one. It self-hides when no active banner doc exists. -->
+  <SiteBanner />
 </template>
 
 <style scoped>
@@ -48,6 +89,20 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
 }
 .hero[style*="--hero-image"] {
   background: radial-gradient(600px circle at var(--cursor-x) var(--cursor-y), rgba(255,255,255,0.12), transparent 60%), linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 75%, transparent) 0%, color-mix(in srgb, var(--color-secondary) 75%, transparent) 100%), var(--hero-image);
-  background-size: cover; background-position: center;
+  background-size: cover; background-position: var(--hero-position, center);
 }
+
+/* Diagonal stripe across the bottom of the hero — transitions into the
+   following section (e.g. PillarsBar) so there's no visible seam. */
+.hero-stripe {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  z-index: 5;
+  pointer-events: none;
+  clip-path: polygon(0 60%, 100% 30%, 100% 100%, 0 100%);
+}
+.hero-stripe--gold       { background-color: var(--jc-gold); }
+.hero-stripe--green      { background-color: var(--jc-green); }
+.hero-stripe--deep-green { background-color: var(--jc-deep-green); }
 </style>

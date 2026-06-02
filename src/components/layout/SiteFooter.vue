@@ -1,13 +1,84 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { useSiteStore } from '@/stores/useSiteStore';
 import { useSanity } from '@/composables/useSanity';
 import { getSocialIcon } from '@/composables/useSocialIcons';
 import SmartLink from '@/components/ui/SmartLink.vue';
 
 const site = useSiteStore();
+const route = useRoute();
 const year = new Date().getFullYear();
+
+// Don't render the CTA band when the current page IS the CTA's destination
+// (avoids a "Donate" button on /donate, "Contact" on /contact, etc).
+const ctaTarget = computed(() => site.ctaFooterUrl || site.ctaUrl || '');
+const showCtaBand = computed(() => {
+  const hasLabel = !!(site.ctaFooterLabel || site.ctaLabel);
+  if (!hasLabel) return false;
+  const target = ctaTarget.value.trim().replace(/\/$/, '');
+  const current = route.path.replace(/\/$/, '');
+  return target !== current;
+});
+
+type FooterLink = { label: string; href: string };
+
+// Fallback link lists used until a `footerColumns` doc is seeded in Sanity.
+const fallbackColumns: { title: string; links: FooterLink[] }[] = [
+  {
+    title: 'Programs',
+    links: [
+      { label: 'Day Shelter & Food Pantry', href: '/programs/day-shelter' },
+      { label: 'Golden Girls', href: '/programs/golden-girls' },
+      { label: 'Financial Services', href: '/programs/financial-services' },
+      { label: 'Family Center', href: '/programs/family-center' },
+      { label: 'Events', href: '/events' },
+    ],
+  },
+  {
+    title: 'About Us',
+    links: [
+      { label: 'Our Story', href: '/our-story' },
+      { label: 'Our Board', href: '/board' },
+      { label: 'Our Staff', href: '/staff' },
+      { label: 'Our Guests', href: '/testimonies' },
+      { label: 'Contact Us', href: '/contact' },
+    ],
+  },
+  {
+    title: 'Forms',
+    links: [
+      { label: 'Volunteer', href: '/forms/volunteer' },
+      { label: 'Referral', href: '/forms/referral' },
+    ],
+  },
+];
+
+const { data: footerColumnsDoc } = useSanity<{
+  columns: { title?: string; links?: { label?: string; url?: string }[] }[];
+}>(
+  `*[_type == "footerColumns"][0]{ columns[]{ title, links[]{ label, url } } }`
+);
+
+const linkColumns = computed<{ title: string; links: FooterLink[] }[]>(() => {
+  const raw = footerColumnsDoc.value?.columns;
+  if (!raw || !raw.length) return fallbackColumns;
+  const mapped = raw
+    .map((col) => ({
+      title: col.title ?? '',
+      links: (col.links ?? [])
+        .filter((l) => l && l.label && l.url)
+        .map((l) => ({ label: l.label as string, href: l.url as string })),
+    }))
+    .filter((col) => col.title && col.links.length);
+  return mapped.length ? mapped : fallbackColumns;
+});
+
+// Derive a tel: href from whatever phone string the store carries.
+const phoneTel = computed(() => {
+  const digits = (site.contactPhone || '').replace(/\D+/g, '');
+  return digits ? `tel:+1${digits.replace(/^1/, '')}` : '';
+});
 
 const { data: socialDoc } = useSanity<{ links: { platform: string; url: string }[] }>(
   `*[_type == "socialLinks"][0]{"links": coalesce(links, items)}`
@@ -36,7 +107,7 @@ const platformLabels: Record<string, string> = {
 <template>
   <footer class="site-footer">
     <!-- Section 1: CTA Band -->
-    <div v-if="site.ctaFooterLabel || site.ctaLabel" class="cta-band">
+    <div v-if="showCtaBand" class="cta-band">
       <div class="cta-band__inner">
         <h2 class="cta-band__heading">{{ site.ctaHeadline }}</h2>
         <p class="cta-band__text">{{ site.ctaSubtext }}</p>
@@ -46,7 +117,42 @@ const platformLabels: Record<string, string> = {
       </div>
     </div>
 
-    <!-- Section 2: Bottom Bar -->
+    <!-- Section 2: Footer columns -->
+    <div class="jc-footer__columns-section">
+      <div class="jc-footer__columns">
+        <div v-for="col in linkColumns" :key="col.title" class="jc-footer__col">
+          <h3 class="jc-footer__heading">{{ col.title }}</h3>
+          <ul class="jc-footer__list">
+            <li v-for="item in col.links" :key="item.href">
+              <SmartLink :to="item.href" class="jc-footer__link">{{ item.label }}</SmartLink>
+            </li>
+          </ul>
+        </div>
+
+        <div class="jc-footer__col">
+          <h3 class="jc-footer__heading">Hours</h3>
+          <div class="jc-footer__text">
+            <p>{{ site.hours.office.days }}<br>{{ site.hours.office.time }}</p>
+            <p><strong>Day Shelter</strong><br>{{ site.hours.dayShelter.days }}<br>{{ site.hours.dayShelter.time }}</p>
+          </div>
+        </div>
+
+        <div class="jc-footer__col">
+          <h3 class="jc-footer__heading">Need Help?</h3>
+          <div class="jc-footer__text">
+            <p v-if="site.contactPhone">
+              <a :href="phoneTel" class="jc-footer__link">{{ site.contactPhone }}</a>
+            </p>
+            <p v-if="site.addressLine1 || site.addressLine2">
+              <template v-if="site.addressLine1">{{ site.addressLine1 }}<br></template>
+              <template v-if="site.addressLine2">{{ site.addressLine2 }}</template>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Bottom Bar -->
     <div class="bottom-bar">
       <div class="bottom-bar__inner">
         <!-- Legal nav row -->
@@ -83,6 +189,18 @@ const platformLabels: Record<string, string> = {
             </a>
           </div>
         </div>
+
+        <!-- Crafted-by attribution -->
+        <p v-if="site.craftedBy" class="bottom-bar__crafted">
+          <a
+            href="https://phiferwebsolutions.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="bottom-bar__crafted-link"
+          >
+            {{ site.craftedBy }}
+          </a>
+        </p>
       </div>
     </div>
   </footer>
@@ -95,7 +213,7 @@ const platformLabels: Record<string, string> = {
 
 /* ─── Section 1: CTA Band ─── */
 .cta-band {
-  background-color: #1f2937;
+  background-color: var(--jc-deep-green);
   padding: 4rem 1.5rem;
   text-align: center;
 }
@@ -144,9 +262,74 @@ const platformLabels: Record<string, string> = {
   outline-offset: 2px;
 }
 
-/* ─── Section 2: Bottom Bar ─── */
+/* ─── Section 2: Footer columns ─── */
+.jc-footer__columns-section {
+  background-color: var(--jc-charcoal);
+  padding: 3.5rem 1.5rem 3rem;
+}
+
+.jc-footer__columns {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2rem;
+}
+
+.jc-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.jc-footer__heading {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: white;
+  margin: 0 0 0.25rem;
+}
+
+.jc-footer__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.jc-footer__link {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+.jc-footer__link:hover {
+  color: white;
+}
+
+.jc-footer__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.jc-footer__text p {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ─── Section 3: Bottom Bar ─── */
 .bottom-bar {
-  background-color: #000000;
+  background-color: var(--jc-charcoal);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 1.25rem 1.5rem;
 }
 
@@ -165,14 +348,14 @@ const platformLabels: Record<string, string> = {
 }
 
 .bottom-bar__legal-link {
-  font-size: 0.8125rem;
-  color: #d1d5db;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
   transition: color 0.2s ease;
   border-radius: 2px;
 }
 
 .bottom-bar__legal-link:hover {
-  color: #ffffff;
+  color: white;
 }
 
 .bottom-bar__legal-link:focus-visible {
@@ -190,8 +373,33 @@ const platformLabels: Record<string, string> = {
 }
 
 .bottom-bar__copyright {
-  font-size: 0.875rem;
-  color: #d1d5db;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.bottom-bar__crafted {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin: 0.75rem 0 0;
+}
+
+.bottom-bar__crafted-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.4);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.bottom-bar__crafted-link:hover {
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.85);
+}
+
+.bottom-bar__crafted-link:focus-visible {
+  outline: 2px dashed rgba(255, 255, 255, 0.7);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 .bottom-bar__social {
@@ -202,13 +410,14 @@ const platformLabels: Record<string, string> = {
 .bottom-bar__social-link {
   display: inline-flex;
   align-items: center;
-  color: #d1d5db;
-  transition: color 0.2s ease;
+  color: rgba(255, 255, 255, 0.75);
+  transition: color 0.2s ease, transform 150ms ease;
   border-radius: 4px;
 }
 
 .bottom-bar__social-link:hover {
-  color: #ffffff;
+  color: white;
+  transform: translateY(-2px);
 }
 
 .bottom-bar__social-link:focus-visible {
@@ -231,6 +440,13 @@ const platformLabels: Record<string, string> = {
   font-weight: 700;
 }
 
+/* ─── Responsive ─── */
+@media (max-width: 1023px) {
+  .jc-footer__columns {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .cta-band__heading {
     font-size: 1.5rem;
@@ -239,6 +455,13 @@ const platformLabels: Record<string, string> = {
   .bottom-bar__meta {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .jc-footer__columns {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
 }
 </style>

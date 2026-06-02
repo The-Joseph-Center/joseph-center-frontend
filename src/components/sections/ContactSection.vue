@@ -57,6 +57,24 @@ function formatPhone(raw) {
             <p class="text-[0.8125rem] font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest mb-1">Phone</p>
             <a :href="'tel:' + (section?.phone || site.contactPhone)" class="text-sm font-medium text-[var(--color-primary)] hover:underline rounded focus-ring">{{ formatPhone(section?.phone || site.contactPhone) }}</a>
           </div>
+          <div v-if="site.addressLine1 || site.addressLine2">
+            <p class="text-[0.8125rem] font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest mb-1">Address</p>
+            <p class="text-sm text-[var(--color-text)] leading-relaxed">
+              <template v-if="site.addressLine1">{{ site.addressLine1 }}<br></template>
+              <template v-if="site.addressLine2">{{ site.addressLine2 }}</template>
+            </p>
+          </div>
+          <div v-if="site.hours?.office?.days || site.hours?.dayShelter?.days">
+            <p class="text-[0.8125rem] font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest mb-1">Hours</p>
+            <p v-if="site.hours.office?.days" class="text-sm text-[var(--color-text)] leading-relaxed">
+              <strong>Office:</strong> {{ site.hours.office.days }}<br>
+              {{ site.hours.office.time }}
+            </p>
+            <p v-if="site.hours.dayShelter?.days" class="text-sm text-[var(--color-text)] leading-relaxed mt-2">
+              <strong>Day Shelter:</strong> {{ site.hours.dayShelter.days }}<br>
+              {{ site.hours.dayShelter.time }}
+            </p>
+          </div>
           <div v-if="section?.responseTime" class="flex items-start gap-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] p-4">
             <span class="text-lg leading-none mt-0.5">⏱</span>
             <p class="text-sm text-[var(--color-text-secondary)]">{{ section.responseTime }}</p>

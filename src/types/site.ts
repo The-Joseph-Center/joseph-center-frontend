@@ -19,14 +19,38 @@ export interface PageMeta {
   jsonLd?: Record<string, unknown>;
 }
 
+/**
+ * Loose typing for a Sanity image source. Carries the asset reference plus
+ * optional crop/hotspot metadata. Pass to sanityImage() to build a URL.
+ */
+export interface SanityImageSource {
+  _type?: 'image';
+  asset?: { _ref?: string; _type?: string };
+  hotspot?: { x?: number; y?: number; height?: number; width?: number };
+  crop?: { top?: number; bottom?: number; left?: number; right?: number };
+  [key: string]: unknown;
+}
+
+export interface HoursBlock {
+  days: string;
+  time: string;
+}
+
+export interface SiteHours {
+  office: HoursBlock;
+  dayShelter: HoursBlock;
+}
+
 export interface SiteConfig {
   name: string;
-  logo: string;
-  darkLogo: string;
+  logo: SanityImageSource | null;
+  darkLogo: SanityImageSource | null;
   tagline: string;
   contactEmail: string;
   contactPhone: string;
-  address: string;
+  addressLine1: string;
+  addressLine2: string;
+  hours: SiteHours;
   ctaLabel: string;
   ctaUrl: string;
   ctaHeadline: string;
@@ -34,6 +58,7 @@ export interface SiteConfig {
   ctaFooterLabel: string;
   ctaFooterUrl: string;
   copyrightText: string;
+  craftedBy: string;
   primaryNav: NavItem[];
   footerNav: NavItem[];
   legalNav: NavItem[];
@@ -42,5 +67,11 @@ export interface SiteConfig {
   // (e.g. HeaderTransparentJC with accordion sections)
   headerNav?: HeaderNavItem[];
   volunteerUrl?: string;
-  donateUrl?: string;
+  donate?: DonateConfig;
+}
+
+export interface DonateConfig {
+  enabled?: boolean;
+  mode?: 'external' | 'internal';
+  externalUrl?: string;
 }

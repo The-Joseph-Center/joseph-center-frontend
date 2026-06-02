@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useSiteStore } from '@/stores/useSiteStore';
+import { sanityImage } from '@/composables/useSanityImage';
 
 const site = useSiteStore();
 
 const navItems = computed(() => site.headerNav || []);
 const volunteerUrl = computed(() => site.volunteerUrl || site.ctaUrl || '/forms/volunteer');
-const donateUrl = computed(() => site.donateUrl || '/donate');
-const logoSrc = computed(() => site.logo || '');
+const logoSrc = computed(() =>
+  site.logo
+    ? sanityImage(site.logo).width(400).height(400).fit('crop').auto('format').url()
+    : ''
+);
 const logoAlt = computed(() => site.name || 'Home');
 
 const menuOpen = ref(false);
@@ -139,13 +143,6 @@ onBeforeUnmount(() => {
         </template>
       </ul>
 
-      <!-- Sticky donate -->
-      <a :href="donateUrl" class="jc-menu__donate" @click="closeMenu">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-          <path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 21 11c0 5.65-7 10-7 10h-2z" />
-        </svg>
-        <span>Donate</span>
-      </a>
     </nav>
   </Teleport>
 </template>
@@ -486,22 +483,4 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Sticky donate */
-.jc-menu__donate {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--jc-white);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  z-index: 1;
-}
-
-.jc-menu__donate:hover {
-  text-decoration: underline;
-}
 </style>

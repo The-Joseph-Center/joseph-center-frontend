@@ -1,43 +1,359 @@
-@import 'tailwindcss';
-@import './theme.css';
-@import './scroll-animations.css';
+/* ============================================================
+   The Joseph Center — Root Stylesheet
+   Tailwind CSS 4 | CSS-first configuration via @theme
+   ============================================================ */
 
-/* ─── Base layer: global resets that Tailwind utilities can override ────── */
+@import "tailwindcss";
+/* Fonts loaded via <link> in index.html — Tailwind 4's CSS processor
+   strips remote @import url() statements, so they won't fetch from here. */
+
+/* ============================================================
+   TIER 1 — BASE COLOR TOKENS
+   Raw named values from joseph-center-colors.json
+   Never use these directly in components — use semantic tokens below
+   ============================================================ */
+
 @layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  :root {
+    /* Primary palette */
+    --jc-green:         #60B567;
+    --jc-deep-green:    #1D5F55;
+    --jc-gold:          #CAA230;
+    --jc-olive:         #6B7C3A;
 
+    /* Supporting palette */
+    --jc-sage:          #8BA888;
+    --jc-cream:         #F5F1E8;
+    --jc-warm-gray:     #6B6B5D;
+    --jc-off-white:     #FAFAF7;
+
+    /* Accent palette */
+    --jc-rust:          #C77547;
+    --jc-charcoal:      #2C3531;
+
+    /* Extended shades — used for hover states and depth */
+    --jc-green-dark:    #4A9A51;   /* green darkened ~15% for hover */
+    --jc-green-light:   #E8F3E9;   /* green tinted for subtle backgrounds */
+    --jc-gold-dark:     #A8841F;   /* gold darkened ~15% for hover */
+    --jc-gold-light:    #FBF4DC;   /* gold tinted for subtle backgrounds */
+    --jc-deep-green-dark: #143F37; /* deep green darkened for active states */
+
+    /* Light theme backgrounds */
+    --jc-bg-primary:    #FAFAF7;
+    --jc-bg-secondary:  #F5F1E8;
+    --jc-bg-subtle:     #E8EDE7;
+
+    /* Light theme text */
+    --jc-text-primary:   #2C3531;
+    --jc-text-secondary: #6B6B5D;
+    --jc-text-light:     #8BA888;
+    --jc-text-white:     #FFFFFF;
+
+    /* Light theme borders */
+    --jc-border-light:   #E8EDE7;
+    --jc-border-medium:  #D4D9CE;
+  }
+}
+
+/* ============================================================
+   TIER 2 — SEMANTIC TOKENS
+   Purpose-driven names that map to base tokens
+   These switch values in dark mode (see dark theme block below)
+   Always prefer these over base tokens in components
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Backgrounds */
+    --color-bg:           var(--jc-bg-primary);
+    --color-bg-secondary: var(--jc-bg-secondary);
+    --color-bg-subtle:    var(--jc-bg-subtle);
+    --color-bg-inverse:   var(--jc-charcoal);
+
+    /* Text */
+    --color-text:         var(--jc-text-primary);
+    --color-text-muted:   var(--jc-text-secondary);
+    --color-text-light:   var(--jc-text-light);
+    --color-text-inverse: var(--jc-text-white);
+
+    /* Brand colors — semantic use */
+    --color-primary:      var(--jc-green);
+    --color-primary-dark: var(--jc-green-dark);
+    --color-primary-light: var(--jc-green-light);
+    --color-secondary:    var(--jc-gold);
+    --color-secondary-dark: var(--jc-gold-dark);
+    --color-secondary-light: var(--jc-gold-light);
+    --color-authority:    var(--jc-deep-green);
+    --color-authority-dark: var(--jc-deep-green-dark);
+    --color-accent:       var(--jc-rust);
+
+    /* Interactive */
+    --color-cta-primary:        var(--jc-green);
+    --color-cta-primary-hover:  var(--jc-green-dark);
+    --color-cta-primary-text:   var(--jc-text-white);
+    --color-cta-secondary:      var(--jc-gold);
+    --color-cta-secondary-hover: var(--jc-gold-dark);
+    --color-cta-secondary-text: var(--jc-charcoal);
+    --color-link:               var(--jc-olive);
+    --color-link-hover:         var(--jc-deep-green);
+
+    /* Borders */
+    --color-border:       var(--jc-border-light);
+    --color-border-medium: var(--jc-border-medium);
+
+    /* Section-specific backgrounds — used directly by block components */
+    --color-section-gold:      var(--jc-gold);
+    --color-section-green:     var(--jc-green);
+    --color-section-deep-green: var(--jc-deep-green);
+    --color-section-cream:     var(--jc-cream);
+    --color-section-charcoal:  var(--jc-charcoal);
+
+    /* Card + surface */
+    --color-card-bg:      #FFFFFF;
+    --color-card-border:  var(--jc-border-light);
+    --color-card-shadow:  rgba(44, 53, 49, 0.08);
+
+    /* Status colors — JC-specific tokens, brand-adjacent values.
+       Defined here (not as aliases) so dashboard can also consume. */
+    --color-success:       var(--jc-green);
+    --color-success-light: var(--jc-green-light);
+    --color-warning:       #EF9F27;
+    --color-warning-light: #FDF1E0;
+    --color-danger:        #E24B4A;
+    --color-danger-light:  #FBE6E5;
+  }
+}
+
+/* ============================================================
+   DARK THEME OVERRIDES
+   Semantic tokens reassigned for dark mode
+   Base tokens remain unchanged
+   ============================================================ */
+
+/* NOTE: auto dark-mode (prefers-color-scheme) intentionally NOT enabled.
+   Dark mode is opt-in via the .dark class below. Re-enable the @media query
+   here once the user-facing theme toggle ships. */
+
+.dark {
+  --color-bg:           #1A1F1D;
+  --color-bg-secondary: #2C3531;
+  --color-bg-subtle:    #3A4440;
+  --color-bg-inverse:   var(--jc-cream);
+
+  --color-text:         #F5F1E8;
+  --color-text-muted:   #C4C8BE;
+  --color-text-light:   #8BA888;
+  --color-text-inverse: var(--jc-charcoal);
+
+  --color-primary:      var(--jc-green);
+  --color-primary-dark: #7CC683;
+  --color-link:         #A3B86C;
+  --color-link-hover:   var(--jc-green);
+
+  --color-border:       #3A4440;
+  --color-border-medium: #4A5550;
+
+  --color-card-bg:      #2C3531;
+  --color-card-border:  #3A4440;
+  --color-card-shadow:  rgba(0, 0, 0, 0.25);
+
+  --color-success-light: rgba(96, 181, 103, 0.15);
+  --color-warning-light: rgba(239, 159, 39, 0.15);
+  --color-danger-light:  rgba(226, 75, 74, 0.15);
+}
+
+/* ============================================================
+   TAILWIND CSS 4 @THEME BLOCK
+   Maps CSS custom properties into Tailwind utility classes
+   e.g. --color-primary → bg-primary, text-primary, border-primary
+   ============================================================ */
+
+@theme {
+  /* ── Colors ─────────────────────────────────────────── */
+
+  /* Base palette — available as bg-jc-green, text-jc-gold, etc. */
+  --color-jc-green:       #60B567;
+  --color-jc-deep-green:  #1D5F55;
+  --color-jc-gold:        #CAA230;
+  --color-jc-olive:       #6B7C3A;
+  --color-jc-sage:        #8BA888;
+  --color-jc-cream:       #F5F1E8;
+  --color-jc-warm-gray:   #6B6B5D;
+  --color-jc-off-white:   #FAFAF7;
+  --color-jc-rust:        #C77547;
+  --color-jc-charcoal:    #2C3531;
+
+  /* Semantic — available as bg-primary, text-secondary, etc. */
+  --color-primary:        var(--color-primary);
+  --color-primary-dark:   var(--color-primary-dark);
+  --color-primary-light:  var(--color-primary-light);
+  --color-secondary:      var(--color-secondary);
+  --color-secondary-dark: var(--color-secondary-dark);
+  --color-secondary-light: var(--color-secondary-light);
+  --color-authority:      var(--color-authority);
+  --color-accent:         var(--color-accent);
+
+  --color-bg:             var(--color-bg);
+  --color-bg-secondary:   var(--color-bg-secondary);
+  --color-bg-subtle:      var(--color-bg-subtle);
+  --color-bg-inverse:     var(--color-bg-inverse);
+
+  --color-text:           var(--color-text);
+  --color-text-muted:     var(--color-text-muted);
+  --color-text-light:     var(--color-text-light);
+  --color-text-inverse:   var(--color-text-inverse);
+
+  --color-border:         var(--color-border);
+  --color-border-medium:  var(--color-border-medium);
+
+  --color-card-bg:        var(--color-card-bg);
+  --color-card-border:    var(--color-card-border);
+
+  /* Section backgrounds — available as bg-section-gold, etc. */
+  --color-section-gold:       var(--color-section-gold);
+  --color-section-green:      var(--color-section-green);
+  --color-section-deep-green: var(--color-section-deep-green);
+  --color-section-cream:      var(--color-section-cream);
+  --color-section-charcoal:   var(--color-section-charcoal);
+
+  /* Status — available as bg-success, text-warning, etc. */
+  --color-success:        var(--color-success);
+  --color-success-light:  var(--color-success-light);
+  --color-warning:        var(--color-warning);
+  --color-warning-light:  var(--color-warning-light);
+  --color-danger:         var(--color-danger);
+  --color-danger-light:   var(--color-danger-light);
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-heading: "Montserrat", sans-serif;
+  --font-body:    "Open Sans", sans-serif;
+  --font-sans:    "Open Sans", sans-serif; /* overrides Tailwind default */
+
+  /* Font sizes — extends Tailwind defaults */
+  --text-2xs: 0.625rem;  /* 10px */
+  --text-xs:  0.75rem;   /* 12px */
+  --text-sm:  0.875rem;  /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg:  1.125rem;  /* 18px */
+  --text-xl:  1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  --text-6xl: 3.75rem;   /* 60px */
+
+  /* ── Spacing ─────────────────────────────────────────── */
+  /* Tailwind CSS 4 inherits default spacing scale — only add custom values */
+  --spacing-18:  4.5rem;
+  --spacing-22:  5.5rem;
+  --spacing-30:  7.5rem;
+  --spacing-section: 5rem;    /* standard section vertical padding */
+  --spacing-section-lg: 7.5rem; /* large section padding (hero sections) */
+
+  /* ── Border Radius ───────────────────────────────────── */
+  --radius-none:   0px;
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+  --radius-xl:     16px;
+  --radius-2xl:    24px;
+  --radius-pill:   999px;  /* pill-shaped buttons */
+  --radius-card:   12px;   /* standard card radius */
+  --radius-full:   9999px;
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-card:   0 2px 12px rgba(44, 53, 49, 0.08);
+  --shadow-card-hover: 0 8px 24px rgba(44, 53, 49, 0.14);
+  --shadow-header: 0 1px 8px rgba(44, 53, 49, 0.08);
+
+  /* ── Transitions ─────────────────────────────────────── */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* ── Z-index ─────────────────────────────────────────── */
+  --z-header:   100;
+  --z-menu:     200;
+  --z-modal:    300;
+  --z-toast:    400;
+}
+
+/* ============================================================
+   BACK-COMPAT ALIASES
+   Map legacy semantic var names → new ones so existing components
+   keep working. Migrate references over time and remove this block.
+   ============================================================ */
+
+@layer base {
+  :root {
+    --color-primary-hover:   var(--color-primary-dark);
+    --color-secondary-hover: var(--color-secondary-dark);
+    --color-accent-hover:    var(--color-accent);
+    --color-text-secondary:  var(--color-text-muted);
+    --color-bg-card:         var(--color-card-bg);
+    --color-bg-tertiary:     var(--color-bg-subtle);
+    --color-bg-hover:        var(--color-bg-subtle);
+    --color-border-light:    var(--color-border);
+    --color-surface:         var(--color-bg-subtle);
+  }
+}
+
+/* ============================================================
+   GLOBAL BASE STYLES
+   Applied to HTML elements — not component-level
+   ============================================================ */
+
+@layer base {
   html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.6;
     color: var(--color-text);
     background-color: var(--color-bg);
-    line-height: 1.6;
-    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Headings use Montserrat */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    font-weight: 700;
     line-height: 1.2;
+    color: var(--color-text);
+  }
+
+  h1 { font-size: var(--text-5xl); }
+  h2 { font-size: var(--text-4xl); }
+  h3 { font-size: var(--text-3xl); }
+  h4 { font-size: var(--text-2xl); }
+  h5 { font-size: var(--text-xl); }
+  h6 { font-size: var(--text-lg); }
+
+  /* Responsive heading scale */
+  @media (max-width: 768px) {
+    h1 { font-size: var(--text-4xl); }
+    h2 { font-size: var(--text-3xl); }
+    h3 { font-size: var(--text-2xl); }
+  }
+
+  p {
+    margin-bottom: 1rem;
+    color: var(--color-text);
   }
 
   a {
-    color: var(--color-primary);
+    color: var(--color-link);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--transition-fast);
   }
 
   a:hover {
-    color: var(--color-secondary);
+    color: var(--color-link-hover);
   }
 
   img {
@@ -46,116 +362,359 @@
     display: block;
   }
 
+  /* Focus styles — accessibility */
   :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: var(--jc-gold-light);
+    color: var(--jc-charcoal);
+  }
+
+  /* SiteHeader is fixed (120px desktop / 90px mobile) — push page content
+     below it. Hero sections that lead a page negate the offset so they sit
+     full-bleed under the transparent header. */
+  #main-content {
+    padding-top: 120px;
+  }
+
+  #main-content > main > .hero:first-child,
+  #main-content > main > section:first-child.hero {
+    margin-top: -120px;
+  }
+
+  @media (max-width: 450px) {
+    #main-content { padding-top: 90px; }
+    #main-content > main > .hero:first-child,
+    #main-content > main > section:first-child.hero { margin-top: -90px; }
+  }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   Reusable classes referenced by multiple Vue components
+   Add component-specific styles in <style scoped> in the .vue file
+   ============================================================ */
+
+@layer components {
+
+  /* ── Buttons ─────────────────────────────────────────── */
+
+  /* Primary — green fill, white text */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    background-color: var(--color-cta-primary);
+    color: var(--color-cta-primary-text);
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-cta-primary-hover);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Secondary — gold fill, dark text */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    background-color: var(--color-cta-secondary);
+    color: var(--color-cta-secondary-text);
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover {
+    background-color: var(--color-cta-secondary-hover);
+    transform: translateY(-1px);
+  }
+
+  /* Outline — green border, green text, transparent bg */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    background-color: transparent;
+    color: var(--color-primary);
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--color-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-outline:hover {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  /* Outline gold — used in header Volunteer button */
+  .btn-outline-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 1.125rem;
+    background-color: transparent;
+    color: var(--jc-gold);
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--jc-gold);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-outline-gold:hover {
+    background-color: var(--jc-gold);
+    color: var(--jc-charcoal);
+  }
+
+  /* Ghost — white outline for use on dark/colored backgrounds */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    background-color: transparent;
+    color: white;
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius-pill);
+    border: 2px solid white;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-ghost:hover {
+    background-color: white;
+    color: var(--color-authority);
+  }
+
+  /* ── Section container ───────────────────────────────── */
+  .section-container {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .section-container {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+
+  /* ── Section headings ────────────────────────────────── */
+  .section-heading {
+    font-family: var(--font-heading);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+  }
+
+  .section-subheading {
+    font-family: var(--font-body);
+    font-size: var(--text-lg);
+    font-weight: 400;
+    text-align: center;
+    color: var(--color-text-muted);
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3rem;
+  }
+
+  /* ── Cards ───────────────────────────────────────────── */
+  .card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  /* ── Gold name banner (staff/video cards) ────────────── */
+  .name-banner {
+    background-color: var(--jc-gold);
+    color: white;
+    font-family: var(--font-heading);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+  }
+
+  /* ── Gold checkmark icon (donation cards) ────────────── */
+  .check-icon {
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--jc-gold);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .check-icon::after {
+    content: '✓';
+    color: var(--jc-deep-green);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  /* ── Form fields ─────────────────────────────────────── */
+  .form-label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 0.375rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border-medium);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    appearance: none;
+  }
+
+  .form-input:focus {
     outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--jc-green-light);
   }
-}
 
-/* ─── Focus indicator system ─────────────────────────────────────────────── */
-/* Light background: dark dashed outline */
-.focus-ring:focus-visible,
-:focus-visible {
-  outline: 3px dashed var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Dark background: light dashed outline — use on hero, stats, pricing highlighted, footer */
-.focus-ring-light:focus-visible {
-  outline: 3px dashed rgba(255, 255, 255, 0.8);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
+  .form-input::placeholder {
+    color: var(--color-text-light);
   }
-}
 
-/* Page layout — not in a layer so it acts as structural scaffolding */
-.page {
-  /* No max-width or padding here — let sections go full-bleed.
-     Individual content blocks set their own max-w and px. */
-}
+  .form-textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
 
-.page > h1 {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  font-size: 2.25rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: var(--color-text);
-  text-align: center;
-}
+  /* Checkbox — gold when checked */
+  .form-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--jc-gold);
+    cursor: pointer;
+  }
 
-/* Legal content (v-html injected) */
-.legal-content {
-  max-width: 48rem;
-  margin: 0 auto;
-  line-height: 1.6;
-}
+  /* ── Structural utilities (carried over from prior root CSS) ─── */
+  /* Spec's :focus-visible above already covers the default focus
+     ring; .focus-ring-light is for use on dark/colored backgrounds. */
+  .focus-ring-light:focus-visible {
+    outline: 3px dashed rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+  }
 
-.legal-content h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 2rem 0 1rem;
-}
+  .page > h1 {
+    max-width: 1200px;
+    margin: 0 auto 1.5rem;
+    padding: 0 1.5rem;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    text-align: center;
+  }
 
-.legal-content h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 1.75rem 0 0.75rem;
-  color: var(--color-text);
-}
+  /* Sanity portable text — legal pages */
+  .legal-content {
+    max-width: 48rem;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .legal-content h1 { font-size: 2rem; font-weight: 700; margin: 2rem 0 1rem; }
+  .legal-content h2 { font-size: 1.5rem; font-weight: 600; margin: 1.75rem 0 0.75rem; color: var(--color-text); }
+  .legal-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+  .legal-content p { margin-bottom: 1rem; }
+  .legal-content strong { font-weight: 600; }
+  .legal-content ul,
+  .legal-content ol { margin: 0.5rem 0 1rem 1.5rem; padding-left: 1rem; }
+  .legal-content ul { list-style-type: disc; }
+  .legal-content ol { list-style-type: decimal; }
+  .legal-content li { margin-bottom: 0.25rem; display: list-item; }
+  .legal-content a { color: var(--color-primary); text-decoration: underline; }
 
-.legal-content h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 1.5rem 0 0.5rem;
+  /* Sanity portable text — CTA sections */
+  .prose-cta ul,
+  .prose-cta ol { margin: 0.5rem 0 1rem 1.5rem; padding-left: 1rem; }
+  .prose-cta ul { list-style-type: disc; }
+  .prose-cta ol { list-style-type: decimal; }
+  .prose-cta li { margin-bottom: 0.25rem; display: list-item; }
+  .prose-cta p { margin-bottom: 1rem; }
+  .prose-cta strong { font-weight: 600; }
+  .prose-cta a { color: var(--color-primary); text-decoration: underline; }
 }
-
-.legal-content p {
-  margin-bottom: 1rem;
-}
-
-.legal-content strong {
-  font-weight: 600;
-}
-
-.legal-content ul,
-.legal-content ol {
-  margin: 0.5rem 0 1rem 1.5rem;
-  padding-left: 1rem;
-}
-
-.legal-content ul {
-  list-style-type: disc;
-}
-
-.legal-content ol {
-  list-style-type: decimal;
-}
-
-.legal-content li {
-  margin-bottom: 0.25rem;
-  display: list-item;
-}
-
-.legal-content a {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
-/* ─── Portable text used in sections (pricing CTA, text content, project write-ups) ─── */
-.prose-cta ul,
-.prose-cta ol {
-  margin: 0.5rem 0 1rem 1.5rem;
-  padding-left: 1rem;
-}
-
-.prose-cta ul { list-style-type: disc; }
-.prose-cta ol { list-style-type: decimal; }
-.prose-cta li { margin-bottom: 0.25rem; display: list-item; }
-.prose-cta p { margin-bottom: 1rem; }
-.prose-cta strong { font-weight: 600; }
-.prose-cta a { color: var(--color-primary); text-decoration: underline; }

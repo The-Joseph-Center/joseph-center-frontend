@@ -12,10 +12,12 @@ useSeo();
 const site = useSiteStore();
 
 // ── Site Settings ──
+import type { SanityImageSource } from '@/types/site';
+
 interface SiteSettings {
   siteName?: string;
-  logo?: { asset?: { url?: string } };
-  darkLogo?: { asset?: { url?: string } };
+  logo?: SanityImageSource;
+  darkLogo?: SanityImageSource;
   ctaLabel?: string;
   ctaUrl?: string;
   ctaHeadline?: string;
@@ -23,28 +25,44 @@ interface SiteSettings {
   ctaFooterLabel?: string;
   ctaFooterUrl?: string;
   copyrightText?: string;
+  craftedBy?: string;
+  businessContact?: {
+    phone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+  };
+  hours?: {
+    office?: { days?: string; time?: string };
+    dayShelter?: { days?: string; time?: string };
+  };
 }
 
 const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
   `*[_type == "siteSettings"][0]{
     siteName,
-    "logo": logo{asset->{url}},
-    "darkLogo": darkLogo{asset->{url}},
+    logo,
+    darkLogo,
     ctaLabel,
     ctaUrl,
     ctaHeadline,
     ctaSubtext,
     ctaFooterLabel,
     ctaFooterUrl,
-    copyrightText
+    copyrightText,
+    craftedBy,
+    businessContact{ phone, addressLine1, addressLine2 },
+    hours{
+      office{ days, time },
+      dayShelter{ days, time }
+    }
   }`
 );
 
 watch(settings, (s) => {
   if (!s) return;
   if (s.siteName) site.name = s.siteName;
-  if (s.logo?.asset?.url) site.logo = s.logo.asset.url;
-  if (s.darkLogo?.asset?.url) site.darkLogo = s.darkLogo.asset.url;
+  if (s.logo) site.logo = s.logo;
+  if (s.darkLogo) site.darkLogo = s.darkLogo;
   if (s.ctaLabel) site.ctaLabel = s.ctaLabel;
   if (s.ctaUrl) site.ctaUrl = s.ctaUrl;
   if (s.ctaHeadline) site.ctaHeadline = s.ctaHeadline;
@@ -52,6 +70,14 @@ watch(settings, (s) => {
   if (s.ctaFooterLabel) site.ctaFooterLabel = s.ctaFooterLabel;
   if (s.ctaFooterUrl) site.ctaFooterUrl = s.ctaFooterUrl;
   if (s.copyrightText) site.copyrightText = s.copyrightText;
+  if (s.craftedBy) site.craftedBy = s.craftedBy;
+  if (s.businessContact?.phone) site.contactPhone = s.businessContact.phone;
+  if (s.businessContact?.addressLine1) site.addressLine1 = s.businessContact.addressLine1;
+  if (s.businessContact?.addressLine2) site.addressLine2 = s.businessContact.addressLine2;
+  if (s.hours?.office?.days) site.hours.office.days = s.hours.office.days;
+  if (s.hours?.office?.time) site.hours.office.time = s.hours.office.time;
+  if (s.hours?.dayShelter?.days) site.hours.dayShelter.days = s.hours.dayShelter.days;
+  if (s.hours?.dayShelter?.time) site.hours.dayShelter.time = s.hours.dayShelter.time;
 });
 
 // ── Navigation ──

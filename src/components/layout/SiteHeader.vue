@@ -1,17 +1,40 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import { useSiteStore } from '@/stores/useSiteStore';
+import { sanityImage } from '@/composables/useSanityImage';
+import SmartLink from '@/components/ui/SmartLink.vue';
 
 const site = useSiteStore();
+const route = useRoute();
 
 const navItems = computed(() => site.headerNav || []);
 const volunteerUrl = computed(() => site.volunteerUrl || site.ctaUrl || '/forms/volunteer');
-const donateUrl = computed(() => site.donateUrl || '/donate');
-const logoSrc = computed(() => site.logo || '');
+const logoSrc = computed(() =>
+  site.logo
+    ? sanityImage(site.logo).width(400).height(400).fit('crop').auto('format').url()
+    : ''
+);
 const logoAlt = computed(() => site.name || 'Home');
 
 const menuOpen = ref(false);
 const openSection = ref<string | null>(null);
+const isScrolled = ref(false);
+// Pessimistic default: assume no hero until the DOM proves otherwise. This
+// means no-hero pages render the solid header on the first paint with no
+// flash; hero pages briefly show solid → transparent once async data lands.
+const hasHero = ref(false);
+let heroObserver: MutationObserver | null = null;
+
+// Header is transparent when sitting over a hero (white text/hamburger over a
+// dark image). On pages without a hero, force the solid/scrolled styling
+// so the hamburger and Volunteer button stay visible. While the full-screen
+// menu is open, force transparent so the bar doesn't show as a white strip
+// across the top of the dark-green menu overlay.
+const isSolid = computed(() => {
+  if (menuOpen.value) return false;
+  return isScrolled.value || !hasHero.value;
+});
 
 function toggleMenu() {
   menuOpen.value = !menuOpen.value;
@@ -31,25 +54,55 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && menuOpen.value) closeMenu();
 }
 
+function handleScroll() {
+  isScrolled.value = window.scrollY > 20;
+}
+
+function detectHero() {
+  hasHero.value = !!document.querySelector('#main-content .hero');
+}
+
+function startHeroObserver() {
+  const target = document.getElementById('main-content');
+  if (!target) return;
+  heroObserver = new MutationObserver(detectHero);
+  heroObserver.observe(target, { childList: true, subtree: true });
+}
+
 watch(menuOpen, (val) => {
   document.body.style.overflow = val ? 'hidden' : '';
 });
 
-onMounted(() => {
+// Auto-close menu + re-detect hero on route change
+watch(() => route.path, async () => {
+  closeMenu();
+  hasHero.value = false; // pessimistic reset; observer will flip it true if a hero mounts
+  await nextTick();
+  detectHero();
+});
+
+onMounted(async () => {
   window.addEventListener('keydown', onKeydown);
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
+  await nextTick();
+  detectHero();
+  startHeroObserver();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('scroll', handleScroll);
+  heroObserver?.disconnect();
   document.body.style.overflow = '';
 });
 </script>
 
 <template>
-  <!-- Header bar — absolute, transparent over hero -->
-  <header class="jc-header">
+  <!-- Header bar — absolute by default, transparent over hero; bg fades to white once scrolled -->
+  <header class="jc-header" :class="{ 'jc-header--scrolled': isSolid }">
     <!-- Concentric coin logo, overflowing top-left -->
-    <a href="/" class="jc-coin" :aria-label="logoAlt">
+    <SmartLink to="/" class="jc-coin" :aria-label="logoAlt">
       <span class="jc-coin__ring jc-coin__ring--gold">
         <span class="jc-coin__ring jc-coin__ring--dark">
           <span class="jc-coin__ring jc-coin__ring--green">
@@ -57,11 +110,11 @@ onBeforeUnmount(() => {
           </span>
         </span>
       </span>
-    </a>
+    </SmartLink>
 
     <!-- Right-side actions -->
     <div class="jc-header__actions">
-      <a :href="volunteerUrl" class="jc-volunteer-btn">Volunteer</a>
+      <SmartLink :to="volunteerUrl" class="jc-volunteer-btn">Volunteer</SmartLink>
       <button
         class="jc-burger"
         :class="{ 'jc-burger--open': menuOpen }"
@@ -90,12 +143,9 @@ onBeforeUnmount(() => {
     >
       <!-- Menu top bar (mirrors header) -->
       <div class="jc-menu__topbar">
-        <a href="/" class="jc-menu__logo" :aria-label="logoAlt" @click="closeMenu">
+        <SmartLink to="/" class="jc-menu__logo" :aria-label="logoAlt" @click="closeMenu">
           <img v-if="logoSrc" :src="logoSrc" :alt="logoAlt" />
-        </a>
-        <div class="jc-menu__topbar-actions">
-          <a :href="volunteerUrl" class="jc-volunteer-btn" @click="closeMenu">Volunteer</a>
-        </div>
+        </SmartLink>
       </div>
 
       <!-- Nav items -->
@@ -104,7 +154,7 @@ onBeforeUnmount(() => {
           <!-- Direct link -->
           <template v-if="!item.children || item.children.length === 0">
             <li>
-              <a :href="item.href" @click="closeMenu">{{ item.label }}</a>
+              <SmartLink :to="item.href!" @click="closeMenu">{{ item.label }}</SmartLink>
             </li>
             <hr />
           </template>
@@ -128,24 +178,17 @@ onBeforeUnmount(() => {
             </li>
             <hr />
             <li v-if="openSection === item.label" class="jc-menu__sublist">
-              <a
+              <SmartLink
                 v-for="child in item.children"
                 :key="child.label"
-                :href="child.href"
+                :to="child.href"
                 @click="closeMenu"
-              >{{ child.label }}</a>
+              >{{ child.label }}</SmartLink>
             </li>
           </template>
         </template>
       </ul>
 
-      <!-- Sticky donate -->
-      <a :href="donateUrl" class="jc-menu__donate" @click="closeMenu">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-          <path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 21 11c0 5.65-7 10-7 10h-2z" />
-        </svg>
-        <span>Donate</span>
-      </a>
     </nav>
   </Teleport>
 </template>
@@ -154,9 +197,9 @@ onBeforeUnmount(() => {
 /* Local fallbacks for the JC palette — themed sites should override these via global CSS vars */
 .jc-header,
 .jc-menu {
-  --jc-white: var(--color-text-inverse, #ffffff);
+  --jc-white: #ffffff;
   --jc-green: var(--color-primary, #60B567);
-  --jc-darkgreen: var(--color-primary-hover, #2D6A4F);
+  --jc-darkgreen: var(--jc-deep-green, #1D5F55);
   --jc-gold: var(--color-secondary, #CAA230);
   --jc-nav-height: 120px;
   --jc-nav-height-mobile: 90px;
@@ -164,9 +207,9 @@ onBeforeUnmount(() => {
   --jc-sm-circle: 200px;
 }
 
-/* ── Header bar (absolute, transparent over hero) ─────────────────────── */
+/* ── Header bar (fixed, transparent over hero; bg fades to white on scroll) ── */
 .jc-header {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -177,6 +220,25 @@ onBeforeUnmount(() => {
   padding-right: 50px;
   z-index: 1000;
   color: var(--jc-white);
+  background: transparent;
+  transition: background-color 300ms ease, box-shadow 300ms ease;
+}
+
+.jc-header--scrolled {
+  background: var(--color-bg);
+  box-shadow: var(--shadow-header, 0 1px 8px rgba(44, 53, 49, 0.08));
+}
+
+/* On scrolled white header, hamburger needs to flip to dark for visibility */
+.jc-header--scrolled .jc-burger:not(.jc-burger--open) span {
+  background: var(--jc-charcoal, #2C3531);
+}
+
+/* And the volunteer button's white border/outline disappears on white bg —
+   swap to authority green so the gold pill still has a visible ring */
+.jc-header--scrolled .jc-volunteer-btn {
+  border-color: var(--jc-darkgreen);
+  outline-color: var(--jc-darkgreen);
 }
 
 @media (max-width: 450px) {
@@ -228,15 +290,19 @@ onBeforeUnmount(() => {
 }
 
 .jc-coin__img {
-  width: 70%;
-  height: 70%;
+  width: 85%;
+  height: 85%;
   object-fit: contain;
+  /* Nudge image right + down to optically center within the visible
+     portion of the coin (rings overflow ~70px past the top-left corner). */
+  transform: translate(8px, 8px);
 }
 
 @media (max-width: 450px) {
   .jc-coin__ring--gold  { width: var(--jc-sm-circle); height: var(--jc-sm-circle); }
   .jc-coin__ring--dark  { width: calc(var(--jc-sm-circle) - 40px); height: calc(var(--jc-sm-circle) - 40px); }
   .jc-coin__ring--green { width: calc(var(--jc-sm-circle) - 80px); height: calc(var(--jc-sm-circle) - 80px); }
+  .jc-coin__img { transform: translate(6px, 6px); }
 }
 
 /* ── Right-side actions ──────────────────────────────────────────────── */
@@ -258,10 +324,10 @@ onBeforeUnmount(() => {
   color: var(--jc-white);
   background: var(--jc-gold);
   border: 2px solid var(--jc-white);
-  outline: 1px solid var(--jc-gold);
+  outline: 1px solid var(--jc-white);
   padding: 5px 12px;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.05em;
   text-decoration: none;
   white-space: nowrap;
@@ -270,6 +336,7 @@ onBeforeUnmount(() => {
 
 .jc-volunteer-btn:hover {
   border-color: var(--jc-gold);
+  outline-color: var(--jc-gold);
   box-shadow: none;
 }
 
@@ -303,8 +370,8 @@ onBeforeUnmount(() => {
 }
 
 .jc-burger span:nth-child(1) { top: 4px; }
-.jc-burger span:nth-child(2) { top: 50%; transform: translateY(-50%); }
-.jc-burger span:nth-child(3) { top: calc(100% - 7px); }
+.jc-burger span:nth-child(2) { top: 11px; }
+.jc-burger span:nth-child(3) { top: 18px; }
 
 .jc-burger--open span:nth-child(1) {
   top: 50%;
@@ -332,7 +399,7 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 100vh;
-  background: var(--jc-green);
+  background: var(--jc-darkgreen);
   z-index: 999;
   transform: translateX(-100%);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -373,8 +440,8 @@ onBeforeUnmount(() => {
 }
 
 .jc-menu__logo img {
-  width: 70%;
-  height: 70%;
+  width: 85%;
+  height: 85%;
   object-fit: contain;
   border-radius: 50%;
 }
@@ -386,24 +453,17 @@ onBeforeUnmount(() => {
   }
 }
 
-.jc-menu__topbar-actions {
-  height: 35px;
-  display: inline-flex;
-  align-items: center;
-  gap: 20px;
-}
-
 /* Nav links */
 .jc-menu__links {
   list-style: none;
   margin: 0;
-  padding: 0 50px calc(var(--jc-nav-height) * 0.5);
+  padding: 90px 50px calc(var(--jc-nav-height) * 0.5);
   flex: 1;
 }
 
 @media (max-width: 450px) {
   .jc-menu__links {
-    padding: 0 24px calc(var(--jc-nav-height-mobile) * 0.5);
+    padding: 70px 24px calc(var(--jc-nav-height-mobile) * 0.5);
   }
 }
 
@@ -425,7 +485,7 @@ onBeforeUnmount(() => {
   border: none;
   font-family: inherit;
   font-size: 1.05rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
@@ -467,7 +527,7 @@ onBeforeUnmount(() => {
 
 .jc-menu__sublist a {
   font-size: 0.9rem;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0.1em;
   padding: 0.5rem 0;
   color: var(--jc-white);
@@ -486,22 +546,4 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Sticky donate */
-.jc-menu__donate {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--jc-white);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  z-index: 1;
-}
-
-.jc-menu__donate:hover {
-  text-decoration: underline;
-}
 </style>

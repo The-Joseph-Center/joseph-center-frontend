@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS volunteer_submissions (
   submitted_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
+-- Unused as of 25-fix-referral-form.md: referral intake is handled by the
+-- CaseMGR embed at /forms/referral. The table is left in place because the
+-- 001 migration has already been applied; dropping it would require a new
+-- migration and isn't necessary — no code writes to it anymore.
 CREATE TABLE IF NOT EXISTS referral_submissions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
   referrer_name TEXT NOT NULL,

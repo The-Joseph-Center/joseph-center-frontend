@@ -4,12 +4,17 @@ import type { SiteConfig } from '@/types/site';
 export const useSiteStore = defineStore('site', {
   state: (): SiteConfig => ({
     name: 'Joseph Center',
-    logo: '',
-    darkLogo: '',
+    logo: null,
+    darkLogo: null,
     tagline: '',
     contactEmail: 'mhighline@josephcentergj.com',
-    contactPhone: '',
-    address: '',
+    contactPhone: '(970) 243-7672',
+    addressLine1: '2511 Belford Ave #9',
+    addressLine2: 'Grand Junction, CO 81501',
+    hours: {
+      office: { days: 'Monday – Friday', time: '8:00am – 5:00pm' },
+      dayShelter: { days: 'Mon – Sat', time: '8:00am – 3:00pm' },
+    },
     ctaLabel: '',
     ctaUrl: '/contact',
     ctaHeadline: 'Ready to get started?',
@@ -17,6 +22,7 @@ export const useSiteStore = defineStore('site', {
     ctaFooterLabel: '',
     ctaFooterUrl: '',
     copyrightText: '',
+    craftedBy: 'Crafted by Phifer Web Solutions',
     primaryNav: [
       { label: 'Home', to: '/' },
       { label: 'About', to: '/about' },
@@ -41,16 +47,41 @@ export const useSiteStore = defineStore('site', {
     socialLinks: [],
     headerNav: [
       { label: 'Home', href: '/' },
-      { label: 'About', href: '/about' },
+      {
+        label: 'About',
+        children: [
+          { label: 'Our Story', href: '/our-story' },
+          { label: 'Board', href: '/board' },
+          { label: 'Testimonials', href: '/testimonies' },
+        ],
+      },
+      {
+        label: 'Programs',
+        children: [
+          { label: 'Day Shelter & Food Pantry', href: '/programs/day-shelter' },
+          { label: 'Golden Girls', href: '/programs/golden-girls' },
+          { label: 'Financial Services', href: '/programs/financial-services' },
+          { label: 'Family Center', href: '/programs/family-center' },
+        ],
+      },
+      {
+        label: 'Forms',
+        children: [
+          { label: 'Volunteer', href: '/forms/volunteer' },
+          { label: 'Referral', href: '/forms/referral' },
+        ],
+      },
       { label: 'Contact', href: '/contact' },
-      { label: 'Donate', href: '/donate' },
-      { label: 'Volunteer Form', href: '/forms/volunteer' },
-      { label: 'Referral Form', href: '/forms/referral' },
-      { label: 'Media', href: '/media' },
-      { label: 'Programs', href: '/programs' },
-      { label: 'Our Story', href: '/our-story' },
+      {
+        label: 'Partner With Us',
+        children: [
+          { label: 'Donate', href: '/donate' },
+          { label: 'Events', href: '/events' },
+          { label: 'Transparency', href: '/transparency' },
+        ],
+      },
     ],
     volunteerUrl: '/forms/volunteer',
-    donateUrl: '/donate',
+    donate: { enabled: false, mode: 'external' },
   }),
 });

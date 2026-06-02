@@ -26,4 +26,6 @@
   status = 200
 
 [functions."sync-coffee-chat"]
-  schedule = "0 6 * * *"
+  # Saturday at 06:00 UTC. Cron format: minute hour dom month dow
+  # (dow 6 = Saturday). Adjust hour if a different time-of-day is wanted.
+  schedule = "0 6 * * 6"

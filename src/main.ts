@@ -4,6 +4,7 @@ import { createHead } from '@unhead/vue';
 import App from './App.vue';
 import router from './router';
 import './assets/styles/main.css';
+import './assets/styles/scroll-animations.css';
 
 const app = createApp(App);
 const pinia = createPinia();

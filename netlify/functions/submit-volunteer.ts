@@ -25,11 +25,38 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { name, email, phone, departments, availability, additionalInfo } = body;
+    const {
+      // Core fields the schema natively persists
+      name, email, phone, departments, availability, additionalInfo,
+      // Extra fields collected by the FormsVolunteer.vue form. The Turso
+      // schema doesn't have dedicated columns for these, so we bundle them
+      // into the `additional_info` column as JSON alongside the freeform note.
+      firstName, lastName,
+      anytime,
+      whyVolunteer, qualifications, howBenefit,
+      employment,
+    } = body;
 
     if (!name || !email) {
       return { statusCode: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'name and email are required' }) };
     }
+
+    // Compose the additional_info column. If any of the spec's extra fields
+    // are present, persist them as a JSON object that also carries the user's
+    // freeform note under `note`. Otherwise fall back to the plain string.
+    const extras: Record<string, unknown> = {};
+    if (firstName) extras.firstName = firstName;
+    if (lastName) extras.lastName = lastName;
+    if (typeof anytime === 'boolean') extras.anytime = anytime;
+    if (whyVolunteer) extras.whyVolunteer = whyVolunteer;
+    if (qualifications) extras.qualifications = qualifications;
+    if (howBenefit) extras.howBenefit = howBenefit;
+    if (Array.isArray(employment) && employment.length) extras.employment = employment;
+    if (additionalInfo) extras.note = additionalInfo;
+
+    const additionalInfoValue = Object.keys(extras).length
+      ? JSON.stringify(extras)
+      : (additionalInfo || null);
 
     await turso.execute({
       sql: `INSERT INTO volunteer_submissions
@@ -39,7 +66,7 @@ export const handler: Handler = async (event) => {
         name, email, phone || null,
         departments ? JSON.stringify(departments) : null,
         availability ? JSON.stringify(availability) : null,
-        additionalInfo || null,
+        additionalInfoValue,
       ],
     });
 

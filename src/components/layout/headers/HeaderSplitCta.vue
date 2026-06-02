@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { Menu, X, Sun, Moon } from 'lucide-vue-next';
 import { useSiteStore } from '@/stores/useSiteStore';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import { useTheme } from '@/composables/useTheme';
+import { sanityImage } from '@/composables/useSanityImage';
 
 const site = useSiteStore();
 const { theme, toggle } = useTheme();
 const mobileOpen = ref(false);
+const logoSrc = computed(() =>
+  site.logo
+    ? sanityImage(site.logo).width(400).height(400).fit('crop').auto('format').url()
+    : ''
+);
 </script>
 
 <template>
@@ -16,7 +22,7 @@ const mobileOpen = ref(false);
     <div class="site-header__inner">
       <!-- Left: Logo -->
       <RouterLink to="/" class="site-header__logo" @click="mobileOpen = false">
-        <img v-if="site.logo" :src="site.logo" :alt="site.name" class="site-header__logo-img" />
+        <img v-if="logoSrc" :src="logoSrc" :alt="site.name" class="site-header__logo-img" />
         <span v-else>{{ site.name }}</span>
       </RouterLink>
 
