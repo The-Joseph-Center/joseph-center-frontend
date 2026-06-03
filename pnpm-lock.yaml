@@ -11,6 +11,9 @@ importers:
       '@libsql/client':
         specifier: ^0.6.0
         version: 0.6.2
+      '@portabletext/types':
+        specifier: ^4.0.2
+        version: 4.0.2
       '@portabletext/vue':
         specifier: ^1.0.14
         version: 1.0.14(vue@3.5.34(typescript@5.7.3))
@@ -331,6 +334,10 @@ packages:
   '@portabletext/types@2.0.15':
     resolution: {integrity: sha512-2e6i2gSQsrA/5OL5Gm4/9bxB9MNO73Fa47zj+0mT93xkoQUCGCWX5fZh1YBJ86hszaRYlqvqG08oULxvvPPp/Q==}
     engines: {node: ^14.13.1 || >=16.0.0 || >=18.0.0}
+
+  '@portabletext/types@4.0.2':
+    resolution: {integrity: sha512-djfIGU9n6DRrunlvj2nIDAp17URo/nA4jSXGvf+Gupx8NLLy9fmJBZ3GL8yhqn9lSVc+cKCharjOa3aOBnWbRw==}
+    engines: {node: '>=20.19 <22 || >=22.12'}
 
   '@portabletext/vue@1.0.14':
     resolution: {integrity: sha512-piVkECB5RpiLa4+i4aYrtYXp/N9y0V20JYoulOKXQ/ptc35Ql7GkhFzw1vmn7IexhNvHjX1NMzrKUg1mPInynA==}
@@ -1281,6 +1288,8 @@ snapshots:
       '@portabletext/types': 2.0.15
 
   '@portabletext/types@2.0.15': {}
+
+  '@portabletext/types@4.0.2': {}
 
   '@portabletext/vue@1.0.14(vue@3.5.34(typescript@5.7.3))':
     dependencies:
