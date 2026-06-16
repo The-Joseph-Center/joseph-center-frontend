@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // GET /.netlify/functions/get-campaign?slug=<slug>
 // Returns the active campaign matching the slug, or 404 if none.

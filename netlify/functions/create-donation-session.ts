@@ -1,6 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // Creates a PaymentIntent (one-time) or Subscription (monthly) and returns
 // the client_secret the Stripe Payment Element needs to confirm payment.

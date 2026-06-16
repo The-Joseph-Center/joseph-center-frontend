@@ -1,6 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import { createClient as createSanityClient } from '@sanity/client';
-import { createClient as createTursoClient } from '@libsql/client';
+import { createClient as createTursoClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 
 const CORS_HEADERS = {

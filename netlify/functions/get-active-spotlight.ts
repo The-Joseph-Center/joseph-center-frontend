@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // GET /.netlify/functions/get-active-spotlight
 // Returns the most recent active spotlight whose date range covers today,

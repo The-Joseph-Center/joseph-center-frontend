@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // GET /.netlify/functions/list-active-campaigns
 //   ?programId=<id>   → campaigns whose program_id matches (program-scoped, e.g. on /programs/golden-girls)

@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // Persists Stay Connected opt-ins (email newsletter + SMS) to the
 // sms_subscribers Turso table. Column names match the Harness CSV template

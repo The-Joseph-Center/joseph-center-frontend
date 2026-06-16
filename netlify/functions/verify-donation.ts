@@ -1,6 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 import { donorOneTime } from './_email-templates/donor-one-time';
 import { donorMonthlyFirst } from './_email-templates/donor-monthly-first';

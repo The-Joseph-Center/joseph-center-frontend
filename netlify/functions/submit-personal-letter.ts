@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 
 // Persists year-end Personal Letter from Mona mailing-address requests.
