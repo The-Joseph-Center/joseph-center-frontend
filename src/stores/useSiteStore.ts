@@ -27,7 +27,6 @@ export const useSiteStore = defineStore('site', {
       { label: 'Home', to: '/' },
       { label: 'About', to: '/about' },
       { label: 'Contact', to: '/contact' },
-      { label: 'Donate', to: '/donate' },
       { label: 'Media', to: '/media' },
       { label: 'Programs', to: '/programs' },
       { label: 'Our Story', to: '/our-story' },
@@ -58,9 +57,10 @@ export const useSiteStore = defineStore('site', {
       {
         label: 'Programs',
         children: [
-          { label: 'Day Shelter & Food Pantry', href: '/programs/day-shelter' },
+          { label: 'Day Shelter', href: '/programs/day-shelter' },
+          { label: 'Food Pantry', href: '/programs/food-pantry' },
           { label: 'Golden Girls', href: '/programs/golden-girls' },
-          { label: 'Financial Services', href: '/programs/financial-services' },
+          { label: 'Integrated Financial Services', href: '/programs/financial-services' },
           { label: 'Family Center', href: '/programs/family-center' },
         ],
       },
@@ -75,7 +75,6 @@ export const useSiteStore = defineStore('site', {
       {
         label: 'Partner With Us',
         children: [
-          { label: 'Donate', href: '/donate' },
           { label: 'Events', href: '/events' },
           { label: 'Transparency', href: '/transparency' },
         ],

@@ -2,6 +2,8 @@
 import { computed, watch } from 'vue';
 import SiteHeader from './SiteHeader.vue';
 import SiteFooter from './SiteFooter.vue';
+import DonateFab from '@/components/donate/DonateFab.vue';
+import DonateModal from '@/components/donate/DonateModal.vue';
 import { useSeo } from '@/composables/useSeo';
 import { useSanity } from '@/composables/useSanity';
 import { useSiteStore } from '@/stores/useSiteStore';
@@ -35,6 +37,11 @@ interface SiteSettings {
     office?: { days?: string; time?: string };
     dayShelter?: { days?: string; time?: string };
   };
+  donate?: {
+    enabled?: boolean;
+    mode?: 'internal' | 'external';
+    externalUrl?: string;
+  };
 }
 
 const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
@@ -54,7 +61,8 @@ const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
     hours{
       office{ days, time },
       dayShelter{ days, time }
-    }
+    },
+    donate{ enabled, mode, externalUrl }
   }`
 );
 
@@ -78,6 +86,13 @@ watch(settings, (s) => {
   if (s.hours?.office?.time) site.hours.office.time = s.hours.office.time;
   if (s.hours?.dayShelter?.days) site.hours.dayShelter.days = s.hours.dayShelter.days;
   if (s.hours?.dayShelter?.time) site.hours.dayShelter.time = s.hours.dayShelter.time;
+  if (s.donate) {
+    site.donate = {
+      enabled: s.donate.enabled ?? false,
+      mode: s.donate.mode ?? 'external',
+      externalUrl: s.donate.externalUrl,
+    };
+  }
 });
 
 // ── Navigation ──
@@ -112,6 +127,8 @@ const ready = computed(() => !settingsLoading.value && !navLoading.value);
       <slot />
     </div>
     <SiteFooter />
+    <DonateFab />
+    <DonateModal />
   </div>
 </template>
 
