@@ -17,9 +17,14 @@ const props = defineProps<{ section?: Section }>();
 
 const defaultPrograms: Program[] = [
   {
-    name: 'Day Shelter & Food Pantry',
-    description: 'We create a safe place for families to eat and shower while managing their path to independence.',
+    name: 'Day Shelter',
+    description: 'A safe place to rest, shower, do laundry, and figure out what comes next — open to anyone in the Grand Valley.',
     href: '/programs/day-shelter',
+  },
+  {
+    name: 'Food Pantry',
+    description: 'Hot meals and food boxes for our guests in Grand Junction, every Tuesday through Friday.',
+    href: '/programs/food-pantry',
   },
   {
     name: 'Parent Advocacy',
@@ -32,8 +37,8 @@ const defaultPrograms: Program[] = [
     href: '/programs/financial-services',
   },
   {
-    name: 'Golden Girls',
-    description: 'If you are a woman over 50 and need help with housing, we have a program that can help.',
+    name: 'Golden Girls Project',
+    description: 'Temporary housing and support for women over 50 starting over in the Grand Valley.',
     href: '/programs/golden-girls',
   },
 ];

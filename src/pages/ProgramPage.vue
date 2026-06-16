@@ -6,6 +6,8 @@ import { PortableText } from '@portabletext/vue';
 import type { TypedObject } from '@portabletext/types';
 import HeroSection from '@/components/sections/HeroSection.vue';
 import HowYouCanHelp from '@/components/sections/HowYouCanHelp.vue';
+import ProgramTestimonialsSection from '@/components/sections/ProgramTestimonialsSection.vue';
+import CampaignProgressBar from '@/components/donate/CampaignProgressBar.vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import type { SanityImageSource } from '@/types/site';
 
@@ -15,7 +17,13 @@ interface InlineCta {
   variant?: 'primary' | 'secondary' | 'ghost';
 }
 
+interface ProgramVideo {
+  title: string;
+  link: string;
+}
+
 interface ProgramDoc {
+  _id?: string;
   title: string;
   slug?: { current: string };
   metaDescription?: string;
@@ -26,6 +34,14 @@ interface ProgramDoc {
   inlineCtas?: InlineCta[];
   donorAppealEnabled?: boolean;
   personDescriptor?: string;
+  programVideos?: ProgramVideo[];
+  programVideosIntro?: string;
+  donorIntro?: string;
+  donorAsk?: number;
+  donorCta1Label?: string;
+  donorCta1Href?: string;
+  donorCta2Label?: string;
+  donorCta2Href?: string;
 }
 
 const route = useRoute();
@@ -43,6 +59,7 @@ const dataset = import.meta.env.VITE_SANITY_DATASET || 'production';
 const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || '2024-01-01';
 
 const QUERY = `*[_type == "program" && slug.current == $slug][0]{
+  _id,
   title,
   slug,
   metaDescription,
@@ -52,7 +69,15 @@ const QUERY = `*[_type == "program" && slug.current == $slug][0]{
   howWeHelpContent,
   inlineCtas[]{ label, href, variant },
   donorAppealEnabled,
-  personDescriptor
+  personDescriptor,
+  programVideos[]{ title, link },
+  programVideosIntro,
+  donorIntro,
+  donorAsk,
+  donorCta1Label,
+  donorCta1Href,
+  donorCta2Label,
+  donorCta2Href
 }`;
 
 async function fetchProgram(slug: string) {
@@ -91,6 +116,42 @@ watch(
 watch([program, loading], ([val, isLoading]) => {
   if (!isLoading && val === null) router.push('/programs');
 });
+
+// ── Active campaigns scoped to this program ──
+interface Campaign {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  goal_cents: number | null;
+  raised_cents: number | null;
+  end_date: string | null;
+  show_progress: boolean;
+}
+const campaigns = ref<Campaign[]>([]);
+
+watch(
+  () => program.value?._id,
+  async (programId) => {
+    if (!programId) {
+      campaigns.value = [];
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/.netlify/functions/list-active-campaigns?programId=${encodeURIComponent(programId)}`
+      );
+      if (!res.ok) {
+        campaigns.value = [];
+        return;
+      }
+      const data = (await res.json()) as { campaigns: Campaign[] };
+      campaigns.value = data.campaigns ?? [];
+    } catch {
+      campaigns.value = [];
+    }
+  }
+);
 
 // SEO — runs whenever the program (re)loads
 watchEffect(() => {
@@ -179,10 +240,45 @@ function ctaClass(variant?: InlineCta['variant']) {
         </div>
       </section>
 
-      <!-- 4. How You Can Help (donor appeal) -->
+      <!-- 4. Their Words — only renders when program.programVideos has entries -->
+      <ProgramTestimonialsSection
+        v-if="program.programVideos?.length"
+        :videos="program.programVideos"
+        :intro="program.programVideosIntro"
+        :layout="program.programVideos.length === 1 ? 'single' : 'grid'"
+      />
+
+      <!-- 5. Active campaigns scoped to this program (renders nothing when none active) -->
+      <section v-if="campaigns.length > 0" class="program-campaigns">
+        <div class="program-campaigns__inner">
+          <a
+            v-for="c in campaigns"
+            :key="c.id"
+            :href="`/donate?campaign=${c.slug}`"
+            class="program-campaigns__card-link"
+          >
+            <CampaignProgressBar
+              :name="c.name"
+              :description="c.description"
+              :goal-cents="c.goal_cents"
+              :raised-cents="c.raised_cents"
+              :end-date="c.end_date"
+              :show-progress="c.show_progress"
+            />
+          </a>
+        </div>
+      </section>
+
+      <!-- 6. How You Can Help (donor appeal) -->
       <HowYouCanHelp
         v-if="program.donorAppealEnabled !== false"
         :person-descriptor="program.personDescriptor"
+        :donor-intro="program.donorIntro"
+        :donor-ask="program.donorAsk"
+        :cta1-label="program.donorCta1Label"
+        :cta1-href="program.donorCta1Href"
+        :cta2-label="program.donorCta2Label"
+        :cta2-href="program.donorCta2Href"
       />
     </template>
   </main>
@@ -196,6 +292,28 @@ function ctaClass(variant?: InlineCta['variant']) {
   padding: 8rem 1.5rem;
   text-align: center;
   color: var(--color-text-muted);
+}
+
+/* Active campaigns scoped to this program */
+.program-campaigns {
+  padding: 0 1.5rem 1.5rem;
+  background: var(--color-bg);
+}
+.program-campaigns__inner {
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.program-campaigns__card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 200ms ease;
+}
+.program-campaigns__card-link:hover {
+  transform: translateY(-2px);
 }
 
 /* Vision */
@@ -267,15 +385,27 @@ function ctaClass(variant?: InlineCta['variant']) {
 }
 
 .program-help__content :deep(ul) {
+  list-style: disc outside;
+  padding-left: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.program-help__content :deep(ol) {
+  list-style: decimal outside;
   padding-left: 1.5rem;
   margin: 0 0 1rem;
 }
 
 .program-help__content :deep(li) {
+  display: list-item;
   font-size: var(--text-base);
   color: var(--color-text-muted);
   line-height: 1.75;
   margin-bottom: 0.25rem;
+}
+
+.program-help__content :deep(li::marker) {
+  color: var(--color-text-muted);
 }
 
 .program-help__ctas {

@@ -5,3 +5,13 @@ dist/
 !.env.example
 *.log
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify
+
+# Deno lock file (created by netlify dev's edge-function runtime — not used by app)
+deno.lock
+
+# macOS resource forks
+._*
+.DS_Store

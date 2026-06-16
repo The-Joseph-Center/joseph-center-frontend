@@ -70,7 +70,7 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
     <SiteAmbience variant="hero" />
     <div class="relative z-10 text-white max-w-3xl" :class="textClasses">
       <h1 v-if="section?.title || site.name" class="text-5xl font-extrabold leading-tight mb-4 text-white whitespace-pre-line">{{ section?.title || site.name }}</h1>
-      <p v-if="section?.subtitle || site.tagline" class="text-xl opacity-80 mb-8 text-white">{{ section?.subtitle || site.tagline }}</p>
+      <p v-if="section?.subtitle || site.tagline" class="hero__subtitle">{{ section?.subtitle || site.tagline }}</p>
       <SmartLink v-if="section?.cta?.label && section?.cta?.url" :to="section.cta.url" class="focus-ring-light inline-block border-2 border-white text-white font-semibold px-8 py-3 rounded-lg hover:bg-white hover:text-[var(--color-primary)] transition-colors">{{ section.cta.label }}</SmartLink>
     </div>
     <div v-if="showStripe" class="hero-stripe" :class="`hero-stripe--${stripeColor}`" aria-hidden="true"></div>
@@ -105,4 +105,15 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
 .hero-stripe--gold       { background-color: var(--jc-gold); }
 .hero-stripe--green      { background-color: var(--jc-green); }
 .hero-stripe--deep-green { background-color: var(--jc-deep-green); }
+
+.hero__subtitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-base, 1rem);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 0.25rem;
+  text-align: inherit;
+}
 </style>

@@ -8,15 +8,33 @@ interface Section {
 
 // Component supports two callsites:
 // 1. Sanity-driven: <HowYouCanHelp :section="..."/> from sectionMap
-// 2. Direct: <HowYouCanHelp person-descriptor="a Golden Girl" /> from ProgramPage
-const props = defineProps<{
+// 2. Direct: <HowYouCanHelp person-descriptor="..." :donor-ask="..." /> from ProgramPage
+const props = withDefaults(defineProps<{
   section?: Section;
   personDescriptor?: string;
-}>();
+  donorIntro?: string;
+  donorAsk?: number;
+  cta1Label?: string;
+  cta1Href?: string;
+  cta2Label?: string;
+  cta2Href?: string;
+}>(), {
+  donorAsk: 25,
+  cta1Label: 'Become a Financial Partner',
+  cta1Href: '/donate',
+  cta2Label: 'Sign Up to Volunteer',
+  cta2Href: '/forms/volunteer',
+});
 
 const personDescriptor = computed(
   () => props.personDescriptor || props.section?.personDescriptor || 'someone in need'
 );
+
+// Split donorIntro on blank lines so each paragraph renders separately
+const donorIntroParagraphs = computed(() => {
+  if (!props.donorIntro) return [];
+  return props.donorIntro.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+});
 </script>
 
 <template>
@@ -25,25 +43,33 @@ const personDescriptor = computed(
       <h2 class="how-you-can-help__heading">How You Can Help</h2>
 
       <div class="how-you-can-help__body">
-        <p class="how-you-can-help__donor-label">
-          The Joseph Center is 100% donor funded.
-        </p>
-        <p class="how-you-can-help__emphasis">
-          You make our work possible!
-        </p>
-        <p>
-          Our wonderful sponsors, donors and volunteers are our heroes.
-          You can become a financial sponsor too and provide for people
-          who otherwise would have nowhere to turn.
-        </p>
-        <p>
-          You can help {{ personDescriptor }} for as little as $25 a month.
-        </p>
+        <!-- Sanity-driven intro: one or more paragraphs replace the default copy -->
+        <template v-if="donorIntroParagraphs.length">
+          <p v-for="(para, i) in donorIntroParagraphs" :key="i">{{ para }}</p>
+        </template>
+
+        <!-- Fallback default copy when no donorIntro is configured -->
+        <template v-else>
+          <p class="how-you-can-help__donor-label">
+            The Joseph Center is 100% donor funded.
+          </p>
+          <p class="how-you-can-help__emphasis">
+            You make our work possible!
+          </p>
+          <p>
+            Our wonderful sponsors, donors and volunteers are our heroes.
+            You can become a financial sponsor too and provide for people
+            who otherwise would have nowhere to turn.
+          </p>
+          <p>
+            You can help {{ personDescriptor }} for as little as ${{ donorAsk }} a month.
+          </p>
+        </template>
       </div>
 
       <div class="how-you-can-help__ctas">
-        <SmartLink to="/donate" class="btn-secondary">Sponsor a Need</SmartLink>
-        <SmartLink to="/forms/volunteer" class="btn-primary">Sign Up to Help</SmartLink>
+        <SmartLink :to="cta1Href" class="btn-secondary">{{ cta1Label }}</SmartLink>
+        <SmartLink :to="cta2Href" class="btn-primary">{{ cta2Label }}</SmartLink>
       </div>
     </div>
   </section>

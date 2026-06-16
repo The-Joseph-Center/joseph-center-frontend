@@ -31,6 +31,8 @@ import PartnershipSection from '@/components/sections/PartnershipSection.vue'
 import OneTimeGiftSection from '@/components/sections/OneTimeGiftSection.vue'
 import StayConnectedSection from '@/components/sections/StayConnectedSection.vue'
 import LatestCoffeeChatSection from '@/components/sections/LatestCoffeeChatSection.vue'
+import MapEmbedSection from '@/components/sections/MapEmbedSection.vue'
+import ActiveCampaignsBanner from '@/components/sections/ActiveCampaignsBanner.vue'
 
 /** Maps section _type (from Sanity) to Vue components */
 export const sectionMap: Record<string, Component> = {
@@ -77,6 +79,10 @@ export const sectionMap: Record<string, Component> = {
   stayConnectedSection: StayConnectedSection,
   // Coffee Chat teaser (24)
   latestCoffeeChatSection: LatestCoffeeChatSection,
+  // Map embed — full-width Google Maps iframe
+  mapEmbedSection: MapEmbedSection,
+  // Active campaigns banner — live from Turso (hidden when no active campaigns)
+  activeCampaignsBanner: ActiveCampaignsBanner,
 }
 
 /** GROQ query — just fetch the whole page document with sections */

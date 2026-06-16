@@ -28,9 +28,10 @@ const fallbackColumns: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Programs',
     links: [
-      { label: 'Day Shelter & Food Pantry', href: '/programs/day-shelter' },
+      { label: 'Day Shelter', href: '/programs/day-shelter' },
+      { label: 'Food Pantry', href: '/programs/food-pantry' },
       { label: 'Golden Girls', href: '/programs/golden-girls' },
-      { label: 'Financial Services', href: '/programs/financial-services' },
+      { label: 'Integrated Financial Services', href: '/programs/financial-services' },
       { label: 'Family Center', href: '/programs/family-center' },
       { label: 'Events', href: '/events' },
     ],
