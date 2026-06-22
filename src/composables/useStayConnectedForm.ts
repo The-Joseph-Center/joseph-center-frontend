@@ -103,7 +103,7 @@ export function useStayConnectedForm(source = 'website') {
       submitted.value = true;
     } catch {
       error.value =
-        'Something went wrong. Please try again or call us at (970) 243-7672.';
+        'Something went wrong. Please try again or call us at (970) 245-7672.';
     } finally {
       submitting.value = false;
     }
