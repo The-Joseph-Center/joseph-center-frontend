@@ -79,14 +79,6 @@ export interface DonateConfig {
 
 export type DonationPlatform = 'colorado-gives' | 'harness' | 'stripe';
 
-export interface AnnouncementBar {
-  enabled: boolean;
-  text: string;
-  linkLabel: string;
-  linkUrl: string;
-  expiresAt: string | null;
-}
-
 export interface CampaignOverlay {
   enabled: boolean;
   campaignName: string;
@@ -102,6 +94,5 @@ export interface DonationConfig {
   coloradoGivesUrl: string;
   harnessUrl: string;
   campaignName: string;
-  announcementBar: AnnouncementBar | null;
   campaignOverlay: CampaignOverlay | null;
 }

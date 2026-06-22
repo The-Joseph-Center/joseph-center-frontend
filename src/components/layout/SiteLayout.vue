@@ -70,7 +70,6 @@ const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
       coloradoGivesUrl,
       harnessUrl,
       campaignName,
-      announcementBar{ enabled, text, linkLabel, linkUrl, expiresAt },
       campaignOverlay{ enabled, campaignName, campaignUrl, badgeText, description, startsAt, expiresAt }
     }
   }`

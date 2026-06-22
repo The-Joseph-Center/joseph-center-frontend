@@ -85,14 +85,6 @@ export const useSiteStore = defineStore('site', {
     donationConfig: null,
   }),
   getters: {
-    // True when the announcement bar should be shown right now (enabled flag
-    // is on and expiresAt is still in the future, or unset).
-    isAnnouncementBarVisible(): boolean {
-      const bar = this.donationConfig?.announcementBar;
-      if (!bar?.enabled) return false;
-      if (!bar.expiresAt) return true;
-      return new Date() < new Date(bar.expiresAt);
-    },
     // Returns the campaign overlay when it's both enabled AND inside its
     // [startsAt, expiresAt] window. Null otherwise.
     activeCampaignOverlay(): CampaignOverlay | null {
