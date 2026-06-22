@@ -2,7 +2,6 @@
 import { computed, watch, watchEffect } from 'vue';
 import SiteHeader from './SiteHeader.vue';
 import SiteFooter from './SiteFooter.vue';
-import AnnouncementBar from './AnnouncementBar.vue';
 import DonateFab from '@/components/donate/DonateFab.vue';
 import DonateModal from '@/components/donate/DonateModal.vue';
 import { useSeo } from '@/composables/useSeo';
@@ -156,7 +155,6 @@ const ready = computed(() => !settingsLoading.value && !navLoading.value);
   <div v-else class="site-layout site-layout--ready">
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <SiteHeader />
-    <AnnouncementBar />
     <div id="main-content">
       <slot />
     </div>
