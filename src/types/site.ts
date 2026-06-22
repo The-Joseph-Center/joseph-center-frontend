@@ -68,10 +68,40 @@ export interface SiteConfig {
   headerNav?: HeaderNavItem[];
   volunteerUrl?: string;
   donate?: DonateConfig;
+  donationConfig?: DonationConfig | null;
 }
 
 export interface DonateConfig {
   enabled?: boolean;
   mode?: 'external' | 'internal';
   externalUrl?: string;
+}
+
+export type DonationPlatform = 'colorado-gives' | 'harness' | 'stripe';
+
+export interface AnnouncementBar {
+  enabled: boolean;
+  text: string;
+  linkLabel: string;
+  linkUrl: string;
+  expiresAt: string | null;
+}
+
+export interface CampaignOverlay {
+  enabled: boolean;
+  campaignName: string;
+  campaignUrl: string;
+  badgeText: string;
+  description: string;
+  startsAt: string | null;
+  expiresAt: string | null;
+}
+
+export interface DonationConfig {
+  activePlatform: DonationPlatform;
+  coloradoGivesUrl: string;
+  harnessUrl: string;
+  campaignName: string;
+  announcementBar: AnnouncementBar | null;
+  campaignOverlay: CampaignOverlay | null;
 }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, watch, watchEffect } from 'vue';
 import SiteHeader from './SiteHeader.vue';
 import SiteFooter from './SiteFooter.vue';
+import AnnouncementBar from './AnnouncementBar.vue';
 import DonateFab from '@/components/donate/DonateFab.vue';
 import DonateModal from '@/components/donate/DonateModal.vue';
 import { useSeo } from '@/composables/useSeo';
 import { useSanity } from '@/composables/useSanity';
 import { useSiteStore } from '@/stores/useSiteStore';
+import type { DonationConfig } from '@/types/site';
 
 useSeo();
 
@@ -42,6 +44,7 @@ interface SiteSettings {
     mode?: 'internal' | 'external';
     externalUrl?: string;
   };
+  donationConfig?: DonationConfig | null;
 }
 
 const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
@@ -62,7 +65,15 @@ const { data: settings, loading: settingsLoading } = useSanity<SiteSettings>(
       office{ days, time },
       dayShelter{ days, time }
     },
-    donate{ enabled, mode, externalUrl }
+    donate{ enabled, mode, externalUrl },
+    donationConfig{
+      activePlatform,
+      coloradoGivesUrl,
+      harnessUrl,
+      campaignName,
+      announcementBar{ enabled, text, linkLabel, linkUrl, expiresAt },
+      campaignOverlay{ enabled, campaignName, campaignUrl, badgeText, description, startsAt, expiresAt }
+    }
   }`
 );
 
@@ -93,6 +104,28 @@ watch(settings, (s) => {
       externalUrl: s.donate.externalUrl,
     };
   }
+  if (s.donationConfig) {
+    site.donationConfig = s.donationConfig;
+  }
+});
+
+// Harness widget loader — only injects the script when the active platform
+// is Harness. Idempotent: the data-harness marker guards against a second
+// load if the watcher refires.
+watchEffect(() => {
+  if (typeof document === 'undefined') return;
+  if (site.donationConfig?.activePlatform !== 'harness') return;
+  if (document.querySelector('script[data-harness]')) return;
+
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.setAttribute('data-harness', 'true');
+  script.src = 'https://widget.harnessapp.com/harness-widget-v2.js';
+  script.async = true;
+  script.onload = () => {
+    window.HarnessWidget?.init({ charity_id: 'f640c546452752f1d757' });
+  };
+  document.head.appendChild(script);
 });
 
 // ── Navigation ──
@@ -123,6 +156,7 @@ const ready = computed(() => !settingsLoading.value && !navLoading.value);
   <div v-else class="site-layout site-layout--ready">
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <SiteHeader />
+    <AnnouncementBar />
     <div id="main-content">
       <slot />
     </div>

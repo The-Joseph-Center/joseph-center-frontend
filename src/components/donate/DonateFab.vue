@@ -2,32 +2,66 @@
 import { computed } from 'vue';
 import { useSiteStore } from '@/stores/useSiteStore';
 import { useDonationModal } from '@/stores/useDonationModal';
+import { useDonateButton } from '@/composables/useDonateButton';
 
 // Floating "Donate" button, fixed bottom-right. Visible when:
-//   • siteSettings.donate.enabled is true (Sanity flag)
-//   • the donate modal isn't already open
-// Clicking opens the donation modal — no navigation.
+//   • siteSettings.donate.enabled is true (Sanity feature flag)
+//   • the donate modal isn't already open (avoids stacking with the modal)
+//
+// Click routes per donationConfig.activePlatform:
+//   • 'colorado-gives' → opens external URL in a new tab
+//   • 'harness'        → opens Harness widget modal
+//   • 'stripe'         → opens the internal DonateModal
+// All three paths go through useDonateButton — the same composable used by
+// every other Give button on the site so behavior stays in sync.
 
 const site = useSiteStore();
 const modal = useDonationModal();
+const { platform, donateHref, donateTarget, donateRel, handleDonateClick } = useDonateButton();
 
 const visible = computed(() =>
   Boolean(site.donate?.enabled) && !modal.isOpen
 );
 
-function openModal() {
-  modal.open();
-}
+// For colorado-gives we render the FAB as an <a> so right-click "open in new
+// tab", middle-click, and keyboard navigation all behave like a real link.
+// For harness/stripe we use a <button> since click triggers a modal — an
+// <a> would expose a confusing href that's never actually visited.
+const renderAsAnchor = computed(() => platform.value === 'colorado-gives');
 </script>
 
 <template>
   <Transition name="donate-fab">
+    <a
+      v-if="visible && renderAsAnchor"
+      :href="donateHref"
+      :target="donateTarget"
+      :rel="donateRel"
+      class="donate-fab"
+      aria-label="Donate to The Joseph Center"
+      @click="handleDonateClick"
+    >
+      <svg
+        class="donate-fab__icon"
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 21s-7-4.5-7-10.5C5 7.5 7.5 5 10.5 5c1.5 0 2.7.7 3.5 1.8.8-1.1 2-1.8 3.5-1.8C20.5 5 23 7.5 23 10.5 23 16.5 16 21 12 21z"
+          fill="currentColor"
+          transform="translate(-1.5 0)"
+        />
+      </svg>
+      <span class="donate-fab__label">Donate</span>
+    </a>
     <button
-      v-if="visible"
+      v-else-if="visible"
       type="button"
       class="donate-fab"
       aria-label="Open donation form"
-      @click="openModal"
+      @click="handleDonateClick"
     >
       <svg
         class="donate-fab__icon"
@@ -59,6 +93,7 @@ function openModal() {
   padding: 0.85rem 1.25rem;
   background: var(--jc-deep-green);
   color: white;
+  text-decoration: none; /* normalize: <a> default underline */
   border: none;
   border-radius: 999px;
   font-family: var(--font-heading);

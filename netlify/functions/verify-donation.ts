@@ -6,6 +6,7 @@ import { donorOneTime } from './_email-templates/donor-one-time';
 import { donorMonthlyFirst } from './_email-templates/donor-monthly-first';
 import { donorMonthlyRecurring } from './_email-templates/donor-monthly-recurring';
 import { staffDonation } from './_email-templates/staff-donation';
+import { addAweberSubscriber } from './_lib/aweber';
 
 // Stripe webhook handler. Receives:
 //   - payment_intent.succeeded  → one-time gifts
@@ -313,6 +314,33 @@ export const handler: Handler = async (event) => {
       }));
     } else {
       console.warn('STAFF_DONATION_TO_EMAIL not set — staff notification skipped');
+    }
+
+    // ─── AWeber sync ──────────────────────────────────────────────────
+    // Add this donor to AWeber with platform/frequency tags. Only attempted
+    // when the donor opted in to email updates. Failures are logged but
+    // never block the webhook response — Stripe shouldn't retry on AWeber
+    // hiccups.
+    //
+    // Note: this fires for every successful Stripe webhook regardless of the
+    // current siteSettings.donationConfig.activePlatform. That's intentional —
+    // if a Stripe charge succeeded, the platform was effectively Stripe at
+    // the moment of payment (subscription renewals from a prior Stripe period
+    // continue even after the active platform flips). The spec's "AWeber sync
+    // gated on stripe" intent is naturally enforced: Colorado Gives / Harness
+    // donations never reach this webhook.
+    if (emailOptIn) {
+      const aweberTags = [
+        'stripe-donor',
+        frequency === 'monthly' ? 'stripe-recurring' : 'stripe-one-time',
+        ...(campaignName ? [`campaign:${campaignName.replace(/\s+/g, '-').toLowerCase()}`] : []),
+      ];
+      const aweberResult = await addAweberSubscriber({
+        email, firstName, lastName, tags: aweberTags,
+      });
+      if (!aweberResult.ok) {
+        console.error('AWeber sync failed for donor:', email, aweberResult.error);
+      }
     }
 
     return {

@@ -4,11 +4,22 @@ import { RouterLink, useRoute } from 'vue-router';
 import { useSiteStore } from '@/stores/useSiteStore';
 import { useSanity } from '@/composables/useSanity';
 import { getSocialIcon } from '@/composables/useSocialIcons';
+import { useDonateButton } from '@/composables/useDonateButton';
 import SmartLink from '@/components/ui/SmartLink.vue';
 
 const site = useSiteStore();
 const route = useRoute();
 const year = new Date().getFullYear();
+
+// When the footer CTA band points at /donate (which it almost always does
+// — "Support Our Mission"), route the click through useDonateButton so the
+// platform-routing rules apply. Otherwise fall back to a regular SmartLink.
+const { donateHref, donateTarget, donateRel, handleDonateClick, platform } = useDonateButton();
+const isDonateCta = computed(() => {
+  const url = (site.ctaFooterUrl || site.ctaUrl || '').trim();
+  return url === '/donate' || url === 'donate';
+});
+const useExternalDonateAnchor = computed(() => platform.value !== 'stripe');
 
 // Don't render the CTA band when the current page IS the CTA's destination
 // (avoids a "Donate" button on /donate, "Contact" on /contact, etc).
@@ -112,7 +123,29 @@ const platformLabels: Record<string, string> = {
       <div class="cta-band__inner">
         <h2 class="cta-band__heading">{{ site.ctaHeadline }}</h2>
         <p class="cta-band__text">{{ site.ctaSubtext }}</p>
-        <SmartLink :to="site.ctaFooterUrl || site.ctaUrl" class="cta-band__button">
+
+        <!-- When the CTA points at /donate, route via the platform-aware
+             composable. External platforms render as <a target="_blank">;
+             Stripe renders as a <button> that opens the modal. -->
+        <a
+          v-if="isDonateCta && useExternalDonateAnchor"
+          :href="donateHref"
+          :target="donateTarget"
+          :rel="donateRel"
+          class="cta-band__button"
+          @click="handleDonateClick"
+        >
+          {{ site.ctaFooterLabel || site.ctaLabel }}
+        </a>
+        <button
+          v-else-if="isDonateCta"
+          type="button"
+          class="cta-band__button"
+          @click="handleDonateClick"
+        >
+          {{ site.ctaFooterLabel || site.ctaLabel }}
+        </button>
+        <SmartLink v-else :to="site.ctaFooterUrl || site.ctaUrl" class="cta-band__button">
           {{ site.ctaFooterLabel || site.ctaLabel }}
         </SmartLink>
       </div>

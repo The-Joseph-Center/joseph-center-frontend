@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { useDonateButton } from '@/composables/useDonateButton';
 
 interface Section {
   personDescriptor?: string;
@@ -29,6 +30,13 @@ const props = withDefaults(defineProps<{
 const personDescriptor = computed(
   () => props.personDescriptor || props.section?.personDescriptor || 'someone in need'
 );
+
+// Donate CTA routes via the shared composable so a single Sanity setting
+// (donationConfig.activePlatform) controls every Give button on the site.
+// cta1 keeps its prop-driven label (defaults to "Become a Financial Partner")
+// but href + target + rel + click handling come from useDonateButton.
+const { donateHref, donateTarget, donateRel, handleDonateClick, platform } = useDonateButton();
+const useExternalAnchor = computed(() => platform.value !== 'stripe');
 
 // Split donorIntro on blank lines so each paragraph renders separately
 const donorIntroParagraphs = computed(() => {
@@ -68,7 +76,27 @@ const donorIntroParagraphs = computed(() => {
       </div>
 
       <div class="how-you-can-help__ctas">
-        <SmartLink :to="cta1Href" class="btn-secondary">{{ cta1Label }}</SmartLink>
+        <!-- Donate CTA — routes per active platform via useDonateButton.
+             Render as <a> for external platforms so right-click / middle-
+             click open-in-new-tab work naturally. -->
+        <a
+          v-if="useExternalAnchor"
+          :href="donateHref"
+          :target="donateTarget"
+          :rel="donateRel"
+          class="btn-secondary"
+          @click="handleDonateClick"
+        >
+          {{ cta1Label }}
+        </a>
+        <button
+          v-else
+          type="button"
+          class="btn-secondary"
+          @click="handleDonateClick"
+        >
+          {{ cta1Label }}
+        </button>
         <SmartLink :to="cta2Href" class="btn-primary">{{ cta2Label }}</SmartLink>
       </div>
     </div>

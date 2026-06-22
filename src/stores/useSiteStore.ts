@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { SiteConfig } from '@/types/site';
+import type { SiteConfig, CampaignOverlay, DonationPlatform } from '@/types/site';
 
 export const useSiteStore = defineStore('site', {
   state: (): SiteConfig => ({
@@ -82,5 +82,42 @@ export const useSiteStore = defineStore('site', {
     ],
     volunteerUrl: '/forms/volunteer',
     donate: { enabled: false, mode: 'external' },
+    donationConfig: null,
   }),
+  getters: {
+    // True when the announcement bar should be shown right now (enabled flag
+    // is on and expiresAt is still in the future, or unset).
+    isAnnouncementBarVisible(): boolean {
+      const bar = this.donationConfig?.announcementBar;
+      if (!bar?.enabled) return false;
+      if (!bar.expiresAt) return true;
+      return new Date() < new Date(bar.expiresAt);
+    },
+    // Returns the campaign overlay when it's both enabled AND inside its
+    // [startsAt, expiresAt] window. Null otherwise.
+    activeCampaignOverlay(): CampaignOverlay | null {
+      const overlay = this.donationConfig?.campaignOverlay;
+      if (!overlay?.enabled) return null;
+      const now = new Date();
+      if (overlay.startsAt && now < new Date(overlay.startsAt)) return null;
+      if (overlay.expiresAt && now > new Date(overlay.expiresAt)) return null;
+      return overlay;
+    },
+    // Resolved active platform. Defaults to 'stripe' when the Sanity config
+    // hasn't loaded yet so the internal flow is the safe fallback.
+    activeDonationPlatform(): DonationPlatform {
+      return this.donationConfig?.activePlatform ?? 'stripe';
+    },
+    // Resolved donate URL/path for the current platform.
+    donateUrl(): string {
+      const config = this.donationConfig;
+      if (!config) return '/donate';
+      switch (config.activePlatform) {
+        case 'colorado-gives': return config.coloradoGivesUrl || '/donate';
+        case 'harness':        return config.harnessUrl || '/donate';
+        case 'stripe':         return '/donate';
+        default:               return '/donate';
+      }
+    },
+  },
 });
