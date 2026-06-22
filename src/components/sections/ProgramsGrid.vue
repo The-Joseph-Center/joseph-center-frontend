@@ -34,7 +34,7 @@ const defaultPrograms: Program[] = [
   {
     name: 'Integrated Financial Services',
     description: 'Our financial services team can help individuals and families navigate financial challenges.',
-    href: '/programs/financial-services',
+    href: '/programs/integrated-financial-services',
   },
   {
     name: 'Golden Girls Project',
