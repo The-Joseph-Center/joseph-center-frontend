@@ -11,6 +11,8 @@ interface Person {
   email?: string | null;
   image?: SanityImageSource | null;
   source?: string | null;
+  quote?: string | null;
+  isAdvisoryBoard?: boolean;
 }
 
 const props = defineProps<{
@@ -62,14 +64,23 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
       <p v-if="person.title" class="person-card__role">{{ person.title }}</p>
     </div>
 
-    <div class="person-card__contact">
+    <div class="person-card__bottom">
+      <!-- Quote takes precedence over the contact link when set -->
+      <p v-if="person.quote" class="person-card__quote">
+        &ldquo;{{ person.quote }}&rdquo;
+      </p>
       <SmartLink
-        v-if="contactHref"
+        v-else-if="contactHref"
         :to="contactHref"
         class="person-card__contact-link"
       >
         Contact {{ firstName }} →
       </SmartLink>
+
+      <!-- Advisory board label (board members only) -->
+      <span v-if="person.isAdvisoryBoard" class="person-card__advisory">
+        Advisory Board Member
+      </span>
     </div>
   </div>
 </template>
@@ -148,11 +159,13 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
   line-height: 1.3;
 }
 
-.person-card__contact {
+.person-card__bottom {
   padding: 0.65rem 0.85rem;
   min-height: 2.25rem;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .person-card__contact-link {
@@ -167,5 +180,28 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
 .person-card__contact-link:hover {
   color: var(--jc-deep-green);
   text-decoration: underline;
+}
+
+.person-card__quote {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+  /* Clamp to 3 lines so cards stay consistent height */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.person-card__advisory {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--jc-gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 </style>

@@ -23,11 +23,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // departmentOptions array.
 const DEPARTMENT_LABELS: Record<string, string> = {
   dayShelter: 'Day Shelter',
-  foodPantryKitchen: 'Food Pantry / Kitchen',
+  kitchen: 'Kitchen',
   familyCenter: 'Family Center',
-  goldenGirlsProject: 'Golden Girls Project',
   events: 'Events',
+  intakes: 'Intakes',
+  goldenGirlsProject: 'Golden Girls Project',
   whereverNeeded: "Wherever I'm needed",
+  // Legacy keys retained so historical submissions still resolve to readable
+  // labels on staff emails / future dashboard views.
+  foodPantryKitchen: 'Food Pantry / Kitchen',
+  parentAdvocacyFamilyCenter: 'Parent Advocacy / Family Center',
 };
 
 function departmentLabels(values: unknown): string[] {
@@ -74,7 +79,11 @@ export const handler: Handler = async (event) => {
       volunteer_type,
       firstName, lastName,
       anytime,
+      whyJC,
       aboutYou, anythingElse,
+      // Legacy — Skills tab was removed in the 06/16/26 staff review but
+      // we still bundle anything posted with these keys into additional_info
+      // so any in-flight client doesn't lose data:
       skills,
       skillsDescription, otherSkills,
     } = body;
@@ -89,6 +98,7 @@ export const handler: Handler = async (event) => {
     if (firstName) extras.firstName = firstName;
     if (lastName) extras.lastName = lastName;
     if (typeof anytime === 'boolean') extras.anytime = anytime;
+    if (whyJC) extras.whyJC = whyJC;
     if (aboutYou) extras.aboutYou = aboutYou;
     if (anythingElse) extras.anythingElse = anythingElse;
     if (Array.isArray(skills) && skills.length) extras.skills = skills;
@@ -133,7 +143,13 @@ export const handler: Handler = async (event) => {
     // ─── Staff notification (template 7) ──────────────────────────────
     const staffTo = process.env.STAFF_VOLUNTEER_TO_EMAIL;
     if (staffTo) {
-      const message = [aboutYou, anythingElse, skillsDescription, otherSkills]
+      const message = [
+        whyJC && `What made them choose The Joseph Center:\n${whyJC}`,
+        aboutYou,
+        anythingElse,
+        skillsDescription,
+        otherSkills,
+      ]
         .filter(Boolean)
         .join('\n\n');
       const staffEmail = staffVolunteer({

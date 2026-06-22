@@ -84,12 +84,35 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
 .hero {
   --cursor-x: 50%;
   --cursor-y: 40%;
-  background: radial-gradient(600px circle at var(--cursor-x) var(--cursor-y), rgba(255,255,255,0.15), transparent 60%), linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  background-size: cover; background-position: center; will-change: background; transition: background 0.1s ease;
+  /* Note: Brave/Edge can render the `transparent` keyword as black-blending
+     in gradient stops, and older Chromium versions don't fully support
+     color-mix(). Use explicit rgba with alpha 0 instead, and inline the
+     brand greens/golds (JC green ≈ #60B567, JC gold ≈ #CAA230) so the
+     gradient is identical across browsers. */
+  background:
+    radial-gradient(600px circle at var(--cursor-x) var(--cursor-y),
+      rgba(255, 255, 255, 0.15),
+      rgba(255, 255, 255, 0) 60%),
+    linear-gradient(135deg,
+      rgb(96, 181, 103) 0%,
+      rgb(202, 162, 48) 100%);
+  background-size: cover;
+  background-position: center;
+  will-change: background;
+  transition: background 0.1s ease;
 }
+
 .hero[style*="--hero-image"] {
-  background: radial-gradient(600px circle at var(--cursor-x) var(--cursor-y), rgba(255,255,255,0.12), transparent 60%), linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 75%, transparent) 0%, color-mix(in srgb, var(--color-secondary) 75%, transparent) 100%), var(--hero-image);
-  background-size: cover; background-position: var(--hero-position, center);
+  background:
+    radial-gradient(600px circle at var(--cursor-x) var(--cursor-y),
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0) 60%),
+    linear-gradient(135deg,
+      rgba(96, 181, 103, 0.75) 0%,
+      rgba(202, 162, 48, 0.75) 100%),
+    var(--hero-image);
+  background-size: cover;
+  background-position: var(--hero-position, center);
 }
 
 /* Diagonal stripe across the bottom of the hero — transitions into the

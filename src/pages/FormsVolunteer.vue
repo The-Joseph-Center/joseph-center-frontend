@@ -15,37 +15,34 @@ useHead({
   ],
 });
 
-// ─── Skills config fetched from Sanity ────────────────────────────────────
+// ─── Sanity-driven skills config ──────────────────────────────────────────
 
 interface SkillCategory {
   name: string;
+  active?: boolean; // false = hidden from form; the category persists in Sanity
   skills: string[];
 }
 
 const defaultSkillCategories: SkillCategory[] = [
-  { name: 'Media & Creative', skills: ['Photography', 'Videography', 'Graphic Design', 'Social Media'] },
-  { name: 'Legal & Financial', skills: ['Legal / Attorney', 'Accounting / Bookkeeping', 'Financial Counseling'] },
-  { name: 'Medical & Wellness', skills: ['Medical / Nursing', 'Mental Health / Counseling', 'Dental'] },
+  { name: 'Media & Creative', skills: ['Photography', 'Videography', 'Graphic Design'] },
+  { name: 'Medical & Wellness', skills: ['Medical / Nursing', 'Dental', 'Vision'] },
   { name: 'Trades & Facilities', skills: ['Carpentry / Repairs', 'Plumbing', 'Electrical', 'Landscaping / Groundskeeping', 'Painting'] },
-  { name: 'Other', skills: ['Transportation / Driving', 'Teaching / Tutoring', 'IT / Technology', 'Grant Writing', 'Translation / Interpretation'] },
+  { name: 'Other', skills: ['Transportation / Driving', 'Teaching / Tutoring', 'Grant Writing', 'Spanish Interpretation', 'Sign Language (ASL) Interpretation', 'Other Language Interpretation'] },
 ];
 
 const { data: skillsConfig } = useSanity<{ categories?: SkillCategory[] }>(
-  `*[_id == "volunteerSkills"][0]{ categories[]{ name, skills } }`
+  `*[_id == "volunteerSkills"][0]{ categories[]{ name, active, skills } }`
 );
 
 const skillCategories = computed<SkillCategory[]>(() => {
   const fromSanity = skillsConfig.value?.categories;
-  if (fromSanity && fromSanity.length > 0) return fromSanity;
-  return defaultSkillCategories;
+  const source = fromSanity && fromSanity.length > 0 ? fromSanity : defaultSkillCategories;
+  // Hide categories explicitly marked inactive; treat missing `active` as true
+  // for backward compatibility with the older doc shape.
+  return source.filter((c) => c.active !== false);
 });
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────
-
-type VolunteerType = 'program' | 'skills';
-const activeTab = ref<VolunteerType>('program');
-
-// ─── Program tab — availability grid ──────────────────────────────────────
+// ─── Availability grid ────────────────────────────────────────────────────
 
 type Slot = 'morning' | 'afternoon' | 'evening';
 type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
@@ -64,12 +61,15 @@ const slotLabels: Record<Slot, string> = {
   evening: '3–5p',
 };
 
+// Departments per 06/16/26 staff review (round 2): Day Shelter, Kitchen,
+// Family Center, Events, Intakes, Golden Girls Project, Wherever I'm needed.
 const departmentOptions = [
   { value: 'dayShelter', label: 'Day Shelter' },
-  { value: 'foodPantryKitchen', label: 'Food Pantry / Kitchen' },
+  { value: 'kitchen', label: 'Kitchen' },
   { value: 'familyCenter', label: 'Family Center' },
-  { value: 'goldenGirlsProject', label: 'Golden Girls Project' },
   { value: 'events', label: 'Events' },
+  { value: 'intakes', label: 'Intakes' },
+  { value: 'goldenGirlsProject', label: 'Golden Girls Project' },
   { value: 'whereverNeeded', label: "Wherever I'm needed" },
 ];
 
@@ -77,16 +77,20 @@ function blankDay(): DayAvailability {
   return { morning: false, afternoon: false, evening: false };
 }
 
+// ─── Tab state (UI-only — both Program and Skills selections submit together) ──
+
+type ActiveTab = 'program' | 'skills';
+const activeTab = ref<ActiveTab>('program');
+
 // ─── Form state ───────────────────────────────────────────────────────────
 
 const form = reactive({
-  // Shared (Section 1)
   firstName: '',
   lastName: '',
   phone: '',
   email: '',
-  // Program tab
   departments: [] as string[],
+  skills: [] as string[],
   anytime: false,
   availability: {
     monday: blankDay(),
@@ -96,12 +100,9 @@ const form = reactive({
     friday: blankDay(),
     saturday: blankDay(),
   } as Record<DayKey, DayAvailability>,
+  whyJC: '',
   aboutYou: '',
   anythingElse: '',
-  // Skills tab
-  skills: [] as string[],
-  skillsDescription: '',
-  otherSkills: '',
 });
 
 const submitting = ref(false);
@@ -128,32 +129,28 @@ async function handleSubmit() {
   submitting.value = true;
   error.value = '';
 
-  const payload: Record<string, unknown> = {
-    volunteer_type: activeTab.value,
-    name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-    email: form.email.trim(),
-    phone: form.phone.trim() || undefined,
-    firstName: form.firstName.trim(),
-    lastName: form.lastName.trim(),
-  };
-
-  if (activeTab.value === 'program') {
-    payload.departments = form.departments;
-    payload.availability = { anytime: form.anytime, ...form.availability };
-    payload.anytime = form.anytime;
-    payload.aboutYou = form.aboutYou.trim() || undefined;
-    payload.anythingElse = form.anythingElse.trim() || undefined;
-  } else {
-    payload.skills = form.skills;
-    payload.skillsDescription = form.skillsDescription.trim() || undefined;
-    payload.otherSkills = form.otherSkills.trim() || undefined;
-  }
-
   try {
     const res = await fetch('/.netlify/functions/submit-volunteer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        // Single-flow form — skills is now a section, not a separate tab.
+        // volunteer_type is always 'program' but kept in the payload so the
+        // function's older email-routing logic still resolves cleanly.
+        volunteer_type: 'program',
+        name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || undefined,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        departments: form.departments,
+        skills: form.skills.length ? form.skills : undefined,
+        availability: { anytime: form.anytime, ...form.availability },
+        anytime: form.anytime,
+        whyJC: form.whyJC.trim() || undefined,
+        aboutYou: form.aboutYou.trim() || undefined,
+        anythingElse: form.anythingElse.trim() || undefined,
+      }),
     });
 
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -189,7 +186,7 @@ async function handleSubmit() {
         </p>
 
         <form class="volunteer-form" @submit.prevent="handleSubmit" novalidate>
-          <!-- Section 1 — Basic Information (shared across tabs) -->
+          <!-- Basic Information -->
           <section class="form-section">
             <h2 class="form-section__heading">Basic Information</h2>
             <div class="form-section__divider" />
@@ -242,34 +239,42 @@ async function handleSubmit() {
             </div>
           </section>
 
-          <!-- Tab switcher -->
-          <div class="tabs" role="tablist" aria-label="Volunteer type">
-            <button
-              type="button"
-              role="tab"
-              :aria-selected="activeTab === 'program'"
-              :class="['tabs__btn', { 'tabs__btn--active': activeTab === 'program' }]"
-              @click="activeTab = 'program'"
-            >
-              Program Volunteer
-            </button>
-            <button
-              type="button"
-              role="tab"
-              :aria-selected="activeTab === 'skills'"
-              :class="['tabs__btn', { 'tabs__btn--active': activeTab === 'skills' }]"
-              @click="activeTab = 'skills'"
-            >
-              Skills Volunteer
-            </button>
-          </div>
+          <!-- Where Would You Like to Help? — unified section with Program / Skills tabs -->
+          <section class="form-section">
+            <h2 class="form-section__heading">Where Would You Like to Help?</h2>
+            <div class="form-section__divider" />
 
-          <!-- ─── Program tab ────────────────────────────────────────── -->
-          <div v-if="activeTab === 'program'" role="tabpanel">
-            <!-- Section 2 — Where Would You Like to Help? -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Where Would You Like to Help?</h2>
-              <div class="form-section__divider" />
+            <!-- Visible regardless of active tab — sets the tone before
+                 anyone starts picking checkboxes. -->
+            <p class="form-section__note">
+              Any volunteer time is appreciated — even just sitting with a
+              guest and listening matters to us. Pick a program below, switch
+              to Skills to share what you bring, or both.
+            </p>
+
+            <div class="tabs" role="tablist" aria-label="Volunteer type">
+              <button
+                type="button"
+                role="tab"
+                :aria-selected="activeTab === 'program'"
+                :class="['tabs__btn', { 'tabs__btn--active': activeTab === 'program' }]"
+                @click="activeTab = 'program'"
+              >
+                Program Volunteer
+              </button>
+              <button
+                type="button"
+                role="tab"
+                :aria-selected="activeTab === 'skills'"
+                :class="['tabs__btn', { 'tabs__btn--active': activeTab === 'skills' }]"
+                @click="activeTab = 'skills'"
+              >
+                Skills Volunteer
+              </button>
+            </div>
+
+            <!-- Program tab — department checkboxes -->
+            <div v-if="activeTab === 'program'" role="tabpanel" class="tab-panel">
               <div class="checkbox-row">
                 <label
                   v-for="opt in departmentOptions"
@@ -285,85 +290,10 @@ async function handleSubmit() {
                   <span>{{ opt.label }}</span>
                 </label>
               </div>
-            </section>
+            </div>
 
-            <!-- Section 3 — Availability -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Availability</h2>
-              <div class="form-section__divider" />
-              <label class="checkbox-item checkbox-item--standalone">
-                <input
-                  type="checkbox"
-                  class="form-checkbox"
-                  v-model="form.anytime"
-                />
-                <span>Anytime</span>
-              </label>
-
-              <div class="availability-grid">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col"><span class="visually-hidden">Time slot</span></th>
-                      <th v-for="day in days" :key="day" scope="col">{{ dayLabel(day) }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="slot in slots" :key="slot">
-                      <th scope="row">{{ slotLabels[slot] }}</th>
-                      <td v-for="day in days" :key="day">
-                        <input
-                          type="checkbox"
-                          class="form-checkbox"
-                          v-model="form.availability[day][slot]"
-                          :aria-label="`${dayLabel(day)} ${slotLabels[slot]}`"
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <!-- Section 4 — Tell Us About Yourself -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Tell Us About Yourself</h2>
-              <div class="form-section__divider" />
-              <div class="form-field">
-                <label class="visually-hidden" for="vol-about">Tell us about yourself</label>
-                <textarea
-                  id="vol-about"
-                  v-model="form.aboutYou"
-                  class="form-input form-textarea"
-                  rows="5"
-                  placeholder="Tell us why you want to volunteer and anything you'd like us to know about your skills or experience."
-                />
-              </div>
-            </section>
-
-            <!-- Section 5 — Anything Else? -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Anything Else?</h2>
-              <div class="form-section__divider" />
-              <div class="form-field">
-                <label class="visually-hidden" for="vol-anything-else">Anything else?</label>
-                <textarea
-                  id="vol-anything-else"
-                  v-model="form.anythingElse"
-                  class="form-input form-textarea"
-                  rows="3"
-                  placeholder="Is there anything else that would help us find the right fit for you?"
-                />
-              </div>
-            </section>
-          </div>
-
-          <!-- ─── Skills tab ─────────────────────────────────────────── -->
-          <div v-else role="tabpanel">
-            <!-- Section 2 — What Skills Can You Offer? -->
-            <section class="form-section">
-              <h2 class="form-section__heading">What Skills Can You Offer?</h2>
-              <div class="form-section__divider" />
+            <!-- Skills tab — Sanity-driven category groups -->
+            <div v-else role="tabpanel" class="tab-panel">
               <div
                 v-for="cat in skillCategories"
                 :key="cat.name"
@@ -386,40 +316,92 @@ async function handleSubmit() {
                   </label>
                 </div>
               </div>
-            </section>
+            </div>
+          </section>
 
-            <!-- Section 3 — Tell Us More About Your Skills -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Tell Us More</h2>
-              <div class="form-section__divider" />
-              <div class="form-field">
-                <label class="visually-hidden" for="vol-skills-desc">Tell us more about your skills</label>
-                <textarea
-                  id="vol-skills-desc"
-                  v-model="form.skillsDescription"
-                  class="form-input form-textarea"
-                  rows="5"
-                  placeholder="Describe your experience and how you'd like to put your skills to use at The Joseph Center."
-                />
-              </div>
-            </section>
+          <!-- Availability -->
+          <section class="form-section">
+            <h2 class="form-section__heading">Availability</h2>
+            <div class="form-section__divider" />
+            <label class="checkbox-item checkbox-item--standalone">
+              <input
+                type="checkbox"
+                class="form-checkbox"
+                v-model="form.anytime"
+              />
+              <span>Anytime</span>
+            </label>
 
-            <!-- Section 4 — Other Skills -->
-            <section class="form-section">
-              <h2 class="form-section__heading">Other Skills</h2>
-              <div class="form-section__divider" />
-              <div class="form-field">
-                <label class="visually-hidden" for="vol-other-skills">Other skills</label>
-                <textarea
-                  id="vol-other-skills"
-                  v-model="form.otherSkills"
-                  class="form-input form-textarea"
-                  rows="3"
-                  placeholder="Any skills or experience not listed above that might be valuable?"
-                />
-              </div>
-            </section>
-          </div>
+            <div class="availability-grid">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="visually-hidden">Time slot</span></th>
+                    <th v-for="day in days" :key="day" scope="col">{{ dayLabel(day) }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="slot in slots" :key="slot">
+                    <th scope="row">{{ slotLabels[slot] }}</th>
+                    <td v-for="day in days" :key="day">
+                      <input
+                        type="checkbox"
+                        class="form-checkbox"
+                        v-model="form.availability[day][slot]"
+                        :aria-label="`${dayLabel(day)} ${slotLabels[slot]}`"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- About You -->
+          <section class="form-section">
+            <h2 class="form-section__heading">About You</h2>
+            <div class="form-section__divider" />
+
+            <div class="form-field">
+              <label class="form-label" for="vol-whyJC">
+                What made you choose The Joseph Center?
+              </label>
+              <textarea
+                id="vol-whyJC"
+                v-model="form.whyJC"
+                class="form-input form-textarea"
+                rows="4"
+                placeholder="Tell us what brought you here…"
+              />
+            </div>
+
+            <div class="form-field">
+              <label class="form-label" for="vol-about">Tell us about yourself</label>
+              <textarea
+                id="vol-about"
+                v-model="form.aboutYou"
+                class="form-input form-textarea"
+                rows="5"
+                placeholder="Why you want to volunteer and anything you'd like us to know about your experience."
+              />
+            </div>
+          </section>
+
+          <!-- Anything Else? -->
+          <section class="form-section">
+            <h2 class="form-section__heading">Anything Else?</h2>
+            <div class="form-section__divider" />
+            <div class="form-field">
+              <label class="visually-hidden" for="vol-anything-else">Anything else?</label>
+              <textarea
+                id="vol-anything-else"
+                v-model="form.anythingElse"
+                class="form-input form-textarea"
+                rows="3"
+                placeholder="Is there anything else that would help us find the right fit for you?"
+              />
+            </div>
+          </section>
 
           <div v-if="error" class="form-error" role="alert">{{ error }}</div>
 
@@ -465,38 +447,6 @@ async function handleSubmit() {
   margin: 0 0 2.5rem;
 }
 
-/* Tab switcher */
-.tabs {
-  display: flex;
-  gap: 0;
-  margin: 1.5rem 0 2.5rem;
-  border-bottom: 2px solid var(--color-border, #e0d8c5);
-}
-
-.tabs__btn {
-  flex: 1;
-  padding: 0.85rem 1rem;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  font-family: var(--font-heading);
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
-}
-
-.tabs__btn:hover {
-  color: var(--color-text);
-}
-
-.tabs__btn--active {
-  color: var(--color-text);
-  border-bottom-color: var(--jc-gold);
-}
-
 .form-section {
   margin-bottom: 2.5rem;
 }
@@ -516,6 +466,49 @@ async function handleSubmit() {
   border-radius: 1px;
 }
 
+.form-section__note {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+
+/* Tab switcher inside "Where Would You Like to Help?" */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border, #e0d8c5);
+}
+
+.tabs__btn {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.tabs__btn:hover { color: var(--color-text); }
+
+.tabs__btn--active {
+  color: var(--color-text);
+  border-bottom-color: var(--jc-gold);
+}
+
+.tab-panel {
+  /* Both tabs share this container — no extra chrome, just the checkboxes */
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -528,21 +521,16 @@ async function handleSubmit() {
   flex-direction: column;
   margin-bottom: 1rem;
 }
-
-.form-field:last-child {
-  margin-bottom: 0;
-}
+.form-field:last-child { margin-bottom: 0; }
 
 @media (max-width: 600px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
+  .form-row { grid-template-columns: 1fr; }
 }
 
 .checkbox-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem 1.5rem;
+  gap: 0.75rem 1.5rem;
 }
 
 .checkbox-item {
@@ -554,19 +542,13 @@ async function handleSubmit() {
   color: var(--color-text);
   cursor: pointer;
 }
-
-.checkbox-item--standalone {
-  margin-bottom: 1rem;
-}
+.checkbox-item--standalone { margin-bottom: 1rem; }
 
 /* Skill categories */
 .skill-category {
   margin-bottom: 1.5rem;
 }
-
-.skill-category:last-child {
-  margin-bottom: 0;
-}
+.skill-category:last-child { margin-bottom: 0; }
 
 .skill-category__name {
   font-family: var(--font-heading);
@@ -574,7 +556,7 @@ async function handleSubmit() {
   font-weight: 600;
   color: var(--color-text-muted);
   margin: 0 0 0.5rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
