@@ -29,6 +29,7 @@ export const useSiteStore = defineStore('site', {
       { label: 'Contact', to: '/contact' },
       { label: 'Media', to: '/media' },
       { label: 'Programs', to: '/programs' },
+      { label: 'Resources', to: '/resources' },
       { label: 'Our Story', to: '/our-story' },
     ],
     footerNav: [
@@ -72,6 +73,7 @@ export const useSiteStore = defineStore('site', {
         ],
       },
       { label: 'Contact', href: '/contact' },
+      { label: 'Resources', href: '/resources' },
       {
         label: 'Partner With Us',
         children: [

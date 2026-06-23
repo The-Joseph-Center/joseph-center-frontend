@@ -8,6 +8,7 @@ import HeroSection from '@/components/sections/HeroSection.vue';
 import HowYouCanHelp from '@/components/sections/HowYouCanHelp.vue';
 import ProgramTestimonialsSection from '@/components/sections/ProgramTestimonialsSection.vue';
 import CampaignProgressBar from '@/components/donate/CampaignProgressBar.vue';
+import ProgramCommunityResources from '@/components/sections/ProgramCommunityResources.vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import type { SanityImageSource } from '@/types/site';
 
@@ -279,6 +280,15 @@ function ctaClass(variant?: InlineCta['variant']) {
         :cta1-href="program.donorCta1Href"
         :cta2-label="program.donorCta2Label"
         :cta2-href="program.donorCta2Href"
+      />
+
+      <!-- 7. Community resources filtered to this program. Keyed by slug so
+           the section re-mounts (and re-fetches) when navigating between
+           program pages. Auto-hides when no matching resources exist. -->
+      <ProgramCommunityResources
+        v-if="program.slug?.current"
+        :key="program.slug.current"
+        :program-slug="program.slug.current"
       />
     </template>
   </main>
