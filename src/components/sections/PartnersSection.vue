@@ -181,13 +181,20 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateVisible));
 
 /* Dark-background card for white/light logos (e.g. Praise Him Ministries).
    Skips the grayscale filter — we want the white logo to stay legible on
-   the deep-green card. Slight padding so the logo isn't kissing the edges. */
+   the deep-green card. We also clamp the inner img to a smaller
+   max-height so the visible card stays roughly the same total height as
+   the other transparent partner slots (otherwise the card padding makes
+   this one taller than its neighbors). */
 .partners__logo--dark-bg {
   background: var(--jc-deep-green);
   border-radius: var(--radius-card, 0.5rem);
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   filter: none;
   opacity: 1;
+}
+
+.partners__logo--dark-bg img {
+  max-height: 76px;
 }
 
 .partners__logo--dark-bg:hover {
