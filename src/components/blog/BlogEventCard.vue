@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 
-defineProps<{
+interface PortableSpan { _type?: string; text?: string }
+interface PortableBlock { _type?: string; children?: PortableSpan[] }
+
+const props = defineProps<{
   event: {
     _id: string;
     title: string;
     slug: { current: string };
     date?: string | null;
-    description?: string | null;
+    // Description is Sanity portable text on the event schema (array of
+    // blocks). On preview cards we want plain text, so we flatten the
+    // spans into a short string.
+    description?: PortableBlock[] | string | null;
     image?: { asset?: { url?: string }; alt?: string | null } | null;
   };
 }>();
@@ -15,6 +22,18 @@ defineProps<{
 function formatDate(d: string): string {
   return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
+
+const descriptionText = computed<string>(() => {
+  const d = props.event.description;
+  if (!d) return '';
+  if (typeof d === 'string') return d;
+  // Flatten portable text → plain string for the preview card.
+  return d
+    .filter((b) => b._type === 'block')
+    .map((b) => (b.children ?? []).map((s) => s.text ?? '').join(''))
+    .join(' ')
+    .trim();
+});
 </script>
 
 <template>
@@ -28,8 +47,8 @@ function formatDate(d: string): string {
           </time>
         </div>
         <h2 class="blog-event-card__title">{{ event.title }}</h2>
-        <p v-if="event.description" class="blog-event-card__desc">
-          {{ event.description }}
+        <p v-if="descriptionText" class="blog-event-card__desc">
+          {{ descriptionText }}
         </p>
         <span class="blog-event-card__more">Event details →</span>
       </div>
