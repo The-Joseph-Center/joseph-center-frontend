@@ -79,9 +79,9 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     title: 'Program Page',
     description: 'Dynamic — use program name: "[Program Name] at The Joseph Center in Grand Junction, CO. Learn how we help and how you can support our work."',
   },
-  '/programs/:slug/donations': {
-    title: 'Program Donations',
-    description: 'Dynamic — use program name: "Support [Program Name] at The Joseph Center through event sponsorship or supply donations. Every contribution makes a direct impact."',
+  '/programs/:slug/resources': {
+    title: 'Program Resources',
+    description: 'Dynamic — use program name: "Community resources connected to [Program Name] at The Joseph Center on the Western Slope of Colorado."',
   },
   '/our-story': {
     title: 'Our Story',

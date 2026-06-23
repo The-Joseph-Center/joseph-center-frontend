@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, type RouteLocationGeneric } from 'vue-router';
 
 const Home = () => import('@/pages/Home.vue');
 // About.vue retained as a file in case anything imports it directly, but the
@@ -23,13 +23,14 @@ const FormsDynamic = () => import('@/pages/FormsDynamic.vue');
 const FormsPersonalLetter = () => import('@/pages/FormsPersonalLetter.vue');
 const FormsStayConnected = () => import('@/pages/FormsStayConnected.vue');
 const FormsCoffeeChatGuest = () => import('@/pages/FormsCoffeeChatGuest.vue');
+const FormsPartnerSubmit = () => import('@/pages/FormsPartnerSubmit.vue');
 const Transparency = () => import('@/pages/Transparency.vue');
 const Media = () => import('@/pages/Media.vue');
 const Programs = () => import('@/pages/Programs.vue');
 const EventsSlug = () => import('@/pages/Events:slug.vue');
 const EventDonations = () => import('@/pages/EventDonationsPage.vue');
 const ProgramPage = () => import('@/pages/ProgramPage.vue');
-const ProgramsSlugDonations = () => import('@/pages/Programs:slugDonations.vue');
+const ProgramsSlugResources = () => import('@/pages/Programs:slugResources.vue');
 const OurStory = () => import('@/pages/OurStory.vue');
 const ProjectDetail = () => import('@/pages/ProjectDetail.vue');
 const TeamProjectDetail = () => import('@/pages/TeamProjectDetail.vue');
@@ -152,6 +153,13 @@ const routes = [
     name: 'Coffee Chat Guest Application',
     component: FormsCoffeeChatGuest,
   },
+  // Direct-link only — not in nav or footer. JC shares this URL with
+  // prospective partners out-of-band.
+  {
+    path: '/forms/partner-submit',
+    name: 'Partner Logo Submission',
+    component: FormsPartnerSubmit,
+  },
   {
     path: '/media',
     name: 'Media',
@@ -179,9 +187,19 @@ const routes = [
     meta: { title: 'Program' },
   },
   {
+    path: '/programs/:slug/resources',
+    name: 'Program Resources',
+    component: ProgramsSlugResources,
+  },
+  // Legacy alias — preserves any external links to the old /donations URL.
+  // Per the 06/16/26 review, program-specific donations were dropped; all
+  // giving routes through /donate. The slug surface was repurposed as the
+  // program-scoped community resources page.
+  {
     path: '/programs/:slug/donations',
-    name: 'Program Donations',
-    component: ProgramsSlugDonations,
+    redirect: (to: RouteLocationGeneric) => ({
+      path: `/programs/${to.params.slug as string}/resources`,
+    }),
   },
   {
     path: '/our-story',

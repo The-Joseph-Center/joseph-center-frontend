@@ -37,7 +37,7 @@ interface EpisodeItem {
 }
 interface EventItem {
   _id: string;
-  _type: 'event';
+  _type: 'events';
   title: string;
   slug: { current: string };
   date?: string | null;
@@ -66,7 +66,7 @@ const query = `{
   "episodes": *[_type == "coffeeEpisode"] | order(publishedAt desc) [0..11] {
     _id, _type, title, videoId, thumbnailUrl, publishedAt, episodeNumber
   },
-  "events": *[_type == "event"] | order(date desc) [0..5] {
+  "events": *[_type == "events"] | order(date desc) [0..5] {
     _id, _type, title, slug, date, description, image{ asset->{ url }, alt }
   }
 }`;
@@ -103,7 +103,7 @@ const feed = computed<FeedItem[]>(() => {
         <template v-for="item in feed" :key="item._id">
           <BlogPostCard v-if="item._type === 'post'" :post="item" />
           <BlogEpisodeCard v-else-if="item._type === 'coffeeEpisode'" :episode="item" />
-          <BlogEventCard v-else-if="item._type === 'event'" :event="item" />
+          <BlogEventCard v-else-if="item._type === 'events'" :event="item" />
         </template>
       </div>
     </div>
