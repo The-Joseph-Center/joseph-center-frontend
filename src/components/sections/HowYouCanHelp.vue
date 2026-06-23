@@ -59,7 +59,7 @@ const donorIntroParagraphs = computed(() => {
         <!-- Fallback default copy when no donorIntro is configured -->
         <template v-else>
           <p class="how-you-can-help__donor-label">
-            The Joseph Center is 100% donor funded.
+            The Joseph Center is 100% community &amp; foundation funded.
           </p>
           <p class="how-you-can-help__emphasis">
             You make our work possible!

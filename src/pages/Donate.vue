@@ -8,7 +8,7 @@ import DonationFlow from '@/components/donate/DonationFlow.vue';
 useHead({
   title: 'Donate — The Joseph Center',
   meta: [
-    { name: 'description', content: 'Support The Joseph Center in Grand Junction with a one-time or monthly gift. 100% community funded — every dollar stays local.' },
+    { name: 'description', content: 'Support The Joseph Center in Grand Junction with a one-time or monthly gift. 100% community & foundation funded — every dollar stays local.' },
   ],
 });
 
