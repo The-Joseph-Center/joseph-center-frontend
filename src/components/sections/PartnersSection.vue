@@ -11,6 +11,9 @@ interface Partner {
   logo?: SanityImageSource | null;
   logoSrc?: string;
   href?: string;
+  // True when the partner's logo is white/light and needs a dark card
+  // background to stay visible. Toggled per-partner in Sanity.
+  darkBg?: boolean;
 }
 
 interface Section {
@@ -105,7 +108,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateVisible));
           :href="partner.href || '#'"
           target="_blank"
           rel="noopener noreferrer"
-          class="partners__logo"
+          :class="['partners__logo', { 'partners__logo--dark-bg': partner.darkBg }]"
           :aria-label="partner.name"
           role="listitem"
         >
@@ -173,6 +176,22 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateVisible));
 
 .partners__logo:hover {
   filter: grayscale(0);
+  opacity: 1;
+}
+
+/* Dark-background card for white/light logos (e.g. Praise Him Ministries).
+   Skips the grayscale filter — we want the white logo to stay legible on
+   the deep-green card. Slight padding so the logo isn't kissing the edges. */
+.partners__logo--dark-bg {
+  background: var(--jc-deep-green);
+  border-radius: var(--radius-card, 0.5rem);
+  padding: 1rem 1.25rem;
+  filter: none;
+  opacity: 1;
+}
+
+.partners__logo--dark-bg:hover {
+  filter: brightness(1.08);
   opacity: 1;
 }
 
