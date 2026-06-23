@@ -11,6 +11,8 @@ const Accessibility = () => import('@/components/layout/LegalPage.vue');
 const CookiePolicy = () => import('@/components/layout/LegalPage.vue');
 const Donate = () => import('@/pages/Donate.vue');
 const Resources = () => import('@/pages/Resources.vue');
+const Blog = () => import('@/pages/Blog.vue');
+const BlogPost = () => import('@/pages/BlogPost.vue');
 const Board = () => import('@/pages/Board.vue');
 const Staff = () => import('@/pages/Staff.vue');
 const Testimonies = () => import('@/pages/Testimonies.vue');
@@ -77,6 +79,16 @@ const routes = [
     path: '/resources',
     name: 'Resources',
     component: Resources,
+  },
+  {
+    path: '/blog',
+    name: 'Blog',
+    component: Blog,
+  },
+  {
+    path: '/blog/:slug',
+    name: 'BlogPost',
+    component: BlogPost,
   },
   {
     path: '/board',
