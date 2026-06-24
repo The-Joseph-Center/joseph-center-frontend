@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed } from 'vue';
 import DiagonalSection from '@/components/sections/DiagonalSection.vue';
 import { sanityImage } from '@/composables/useSanityImage';
 import type { SanityImageSource } from '@/types/site';
@@ -60,166 +60,238 @@ function partnerLogoUrl(partner: Partner): string {
   }
   return partner.logoSrc ?? '';
 }
-
-const currentIndex = ref(0);
-const visibleCount = ref(4);
-
-function updateVisible() {
-  visibleCount.value = window.innerWidth >= 768 ? 4 : 2;
-}
-
-function prev() {
-  currentIndex.value = (currentIndex.value - 1 + partners.value.length) % partners.value.length;
-}
-
-function next() {
-  currentIndex.value = (currentIndex.value + 1) % partners.value.length;
-}
-
-const visiblePartners = computed(() => {
-  const list = partners.value;
-  if (!list.length) return [] as Partner[];
-  const out: Partner[] = [];
-  for (let i = 0; i < Math.min(visibleCount.value, list.length); i++) {
-    const item = list[(currentIndex.value + i) % list.length];
-    if (item) out.push(item);
-  }
-  return out;
-});
-
-onMounted(() => {
-  updateVisible();
-  window.addEventListener('resize', updateVisible);
-});
-onBeforeUnmount(() => window.removeEventListener('resize', updateVisible));
 </script>
 
 <template>
   <DiagonalSection :title="title" :color="bandColor" :content-bg="'var(--color-bg-secondary)'">
-    <div class="partners">
-      <button class="partners__nav partners__nav--prev" @click="prev" aria-label="Previous partners">
-        <span aria-hidden="true">◁</span>
-      </button>
+    <div class="partners-marquee">
+      <div
+        v-if="partners.length"
+        class="partners-marquee__outer"
+        role="region"
+        aria-label="Our partners"
+      >
+        <div class="partners-marquee__track">
+          <!--
+            Render the list twice so the second copy picks up exactly where
+            the first leaves off — seamless loop. aria-hidden on the duplicate
+            so screen readers only announce each partner once.
+          -->
+          <ul class="partners-marquee__list">
+            <li
+              v-for="partner in partners"
+              :key="partner.name"
+              class="partners-marquee__item"
+            >
+              <a
+                :href="partner.href || '#'"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="['partners-marquee__link', { 'partners-marquee__link--dark-bg': partner.darkBg }]"
+                :aria-label="`Visit ${partner.name} (opens in new tab)`"
+              >
+                <img
+                  v-if="partner.logo || partner.logoSrc"
+                  :src="partnerLogoUrl(partner)"
+                  :alt="partner.name"
+                  class="partners-marquee__logo"
+                  loading="lazy"
+                />
+                <span v-else class="partners-marquee__name-fallback">
+                  {{ partner.name }}
+                </span>
+              </a>
+            </li>
+          </ul>
 
-      <div class="partners__track" role="list">
-        <a
-          v-for="partner in visiblePartners"
-          :key="partner.name"
-          :href="partner.href || '#'"
-          target="_blank"
-          rel="noopener noreferrer"
-          :class="['partners__logo', { 'partners__logo--dark-bg': partner.darkBg }]"
-          :aria-label="partner.name"
-          role="listitem"
-        >
-          <img :src="partnerLogoUrl(partner)" :alt="partner.name" loading="lazy" />
-        </a>
+          <ul class="partners-marquee__list" aria-hidden="true">
+            <li
+              v-for="partner in partners"
+              :key="`dup-${partner.name}`"
+              class="partners-marquee__item"
+            >
+              <a
+                :href="partner.href || '#'"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="['partners-marquee__link', { 'partners-marquee__link--dark-bg': partner.darkBg }]"
+                tabindex="-1"
+              >
+                <img
+                  v-if="partner.logo || partner.logoSrc"
+                  :src="partnerLogoUrl(partner)"
+                  :alt="partner.name"
+                  class="partners-marquee__logo"
+                  loading="lazy"
+                />
+                <span v-else class="partners-marquee__name-fallback">
+                  {{ partner.name }}
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <button class="partners__nav partners__nav--next" @click="next" aria-label="Next partners">
-        <span aria-hidden="true">▷</span>
-      </button>
+      <div v-else class="partners-marquee__empty">
+        <p>Partner logos coming soon.</p>
+      </div>
     </div>
   </DiagonalSection>
 </template>
 
 <style scoped>
-.partners {
-  max-width: 1100px;
-  margin: 0 auto;
+/* Marquee container — overflow:hidden clips the duplicate as it scrolls off */
+.partners-marquee {
+  padding: 2rem 0;
+  overflow: hidden;
+}
+
+/* Fade edges so logos don't hard-clip at the container boundary. */
+.partners-marquee__outer {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+
+/* Track holds both lists side-by-side. The keyframes scroll one full
+   list width (-50%, since the track is two lists wide), so when the
+   animation loops the duplicate occupies the original's position
+   — no visual jump.
+   Scroll duration: increase for more logos, decrease for fewer.
+   4 logos: 45s | 8 logos: 35s | 12+ logos: 28s */
+.partners-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: partners-scroll 45s linear infinite;
+}
+
+/* Pause on hover OR when any child element receives focus. */
+.partners-marquee__outer:hover .partners-marquee__track,
+.partners-marquee__outer:focus-within .partners-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes partners-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.partners-marquee__list {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.partners__track {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(var(--visible-count, 4), 1fr);
-  gap: 2.5rem;
-  align-items: center;
-  justify-items: center;
-}
-
-@media (max-width: 767px) {
-  .partners__track {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-}
-
-.partners__logo {
-  /* Slot is purely a click target + filter wrapper. No fixed dimensions on
-     the slot itself — let the image determine height. */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 0.5rem;
-  box-sizing: border-box;
-  filter: grayscale(1);
-  opacity: 0.85;
-  transition: filter 200ms ease, opacity 200ms ease;
-}
-
-.partners__logo img {
-  /* Use max-* so aspect is ALWAYS preserved. With fixed height + max-width,
-     extra-wide logos would have their width clamped but height held at
-     100px, producing horizontal squish. max-height + max-width lets the
-     browser scale uniformly when either bound is hit. */
-  max-height: 100px;
-  max-width: 100%;
-  width: auto;
-  height: auto;
-  display: block;
-}
-
-.partners__logo:hover {
-  filter: grayscale(0);
-  opacity: 1;
-}
-
-/* Dark-background card for white/light logos (e.g. Praise Him Ministries).
-   Skips the grayscale filter — we want the white logo to stay legible on
-   the deep-green card. We also clamp the inner img to a smaller
-   max-height so the visible card stays roughly the same total height as
-   the other transparent partner slots (otherwise the card padding makes
-   this one taller than its neighbors). */
-.partners__logo--dark-bg {
-  background: var(--jc-deep-green);
-  border-radius: var(--radius-card, 0.5rem);
-  padding: 0.75rem 1rem;
-  filter: none;
-  opacity: 1;
-}
-
-.partners__logo--dark-bg img {
-  max-height: 76px;
-}
-
-.partners__logo--dark-bg:hover {
-  filter: brightness(1.08);
-  opacity: 1;
-}
-
-.partners__nav {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--jc-gold);
-  background: white;
-  color: var(--jc-gold);
-  font-size: 1.25rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 150ms ease, color 150ms ease;
+  list-style: none;
+  padding: 0;
+  margin: 0;
   flex-shrink: 0;
 }
 
-.partners__nav:hover {
-  background: var(--jc-gold);
-  color: white;
+.partners-marquee__item {
+  flex-shrink: 0;
+  padding: 0 3rem;
+}
+
+.partners-marquee__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 200ms ease, transform 200ms ease;
+  border-radius: var(--radius-sm);
+}
+
+.partners-marquee__outer:hover .partners-marquee__link:hover,
+.partners-marquee__outer:focus-within .partners-marquee__link:focus {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.partners-marquee__logo {
+  height: 60px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+  filter: grayscale(100%);
+  transition: filter 200ms ease;
+}
+
+.partners-marquee__outer:hover .partners-marquee__link:hover .partners-marquee__logo,
+.partners-marquee__outer:focus-within .partners-marquee__link:focus .partners-marquee__logo {
+  filter: grayscale(0%);
+}
+
+/* Dark-background slot for white/light logos (e.g. Praise Him Ministries).
+   Matches the existing carousel behavior: deep-green card, no greyscale,
+   and a tighter image clamp so the visible card stays the same total
+   height as the transparent partner slots. */
+.partners-marquee__link--dark-bg {
+  background: var(--jc-deep-green);
+  border-radius: var(--radius-card, 0.5rem);
+  padding: 0.5rem 1rem;
+  opacity: 1;
+}
+.partners-marquee__link--dark-bg .partners-marquee__logo {
+  filter: none;
+  height: 52px;
+}
+.partners-marquee__outer:hover .partners-marquee__link--dark-bg:hover,
+.partners-marquee__outer:focus-within .partners-marquee__link--dark-bg:focus {
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+.partners-marquee__name-fallback {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.partners-marquee__empty {
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Reduced motion — static centered grid instead of continuous scroll.
+   Drops the duplicate list, removes the edge fade, full color, full opacity. */
+@media (prefers-reduced-motion: reduce) {
+  .partners-marquee__track {
+    animation: none;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+  }
+  .partners-marquee__list:last-child { display: none; }
+  .partners-marquee__list {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 2rem;
+  }
+  .partners-marquee__item { padding: 0; }
+  .partners-marquee__outer {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .partners-marquee__logo { filter: grayscale(0%); }
+  .partners-marquee__link { opacity: 1; }
 }
 </style>
