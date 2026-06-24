@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import { useStayConnectedForm } from '@/composables/useStayConnectedForm';
+import { useStayConnectedPresence } from '@/composables/useStayConnectedPresence';
+
+// Register in setup() (not onMounted) so the FooterStayConnected band hides
+// during the same render pass — no flash of double-signup on first paint.
+const presence = useStayConnectedPresence();
+presence.register();
+onBeforeUnmount(() => presence.unregister());
 
 interface Section {
   heading?: string;

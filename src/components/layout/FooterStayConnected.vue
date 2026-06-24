@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useStayConnectedForm } from '@/composables/useStayConnectedForm';
+import { useStayConnectedPresence } from '@/composables/useStayConnectedPresence';
 
 // Slim signup band rendered inside SiteFooter — sits between the donate
 // CTA band and the link columns. Reuses the same composable as
@@ -8,10 +9,14 @@ import { useStayConnectedForm } from '@/composables/useStayConnectedForm';
 // from on-page section signups.
 const { form, submitting, submitted, error, needsPhone, handleSubmit } =
   useStayConnectedForm('footer-band');
+
+// Hide the footer band when the current page already renders a full
+// StayConnectedSection — avoids two signup forms on the same page.
+const { isPresentOnPage } = useStayConnectedPresence();
 </script>
 
 <template>
-  <div class="footer-subscribe">
+  <div v-if="!isPresentOnPage" class="footer-subscribe">
     <div class="footer-subscribe__inner">
       <div class="footer-subscribe__copy">
         <h2 class="footer-subscribe__heading">Stay Connected</h2>
