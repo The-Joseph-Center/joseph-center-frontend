@@ -31,6 +31,7 @@ import PartnershipSection from '@/components/sections/PartnershipSection.vue'
 import OneTimeGiftSection from '@/components/sections/OneTimeGiftSection.vue'
 import StayConnectedSection from '@/components/sections/StayConnectedSection.vue'
 import LatestCoffeeChatSection from '@/components/sections/LatestCoffeeChatSection.vue'
+import LatestBlogSection from '@/components/sections/LatestBlogSection.vue'
 import MapEmbedSection from '@/components/sections/MapEmbedSection.vue'
 import ActiveCampaignsBanner from '@/components/sections/ActiveCampaignsBanner.vue'
 
@@ -79,6 +80,8 @@ export const sectionMap: Record<string, Component> = {
   stayConnectedSection: StayConnectedSection,
   // Coffee Chat teaser (24)
   latestCoffeeChatSection: LatestCoffeeChatSection,
+  // Blog teaser — surfaces N latest posts with link to /blog
+  latestBlogSection: LatestBlogSection,
   // Map embed — full-width Google Maps iframe
   mapEmbedSection: MapEmbedSection,
   // Active campaigns banner — live from Turso (hidden when no active campaigns)
