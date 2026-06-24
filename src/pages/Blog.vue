@@ -6,6 +6,7 @@ import BlogPostCard from '@/components/blog/BlogPostCard.vue';
 import BlogEpisodeCard from '@/components/blog/BlogEpisodeCard.vue';
 import BlogEventCard from '@/components/blog/BlogEventCard.vue';
 import BlogFeaturedCard from '@/components/blog/BlogFeaturedCard.vue';
+import StayConnectedSection from '@/components/sections/StayConnectedSection.vue';
 import type { SanityImageSource } from '@/types/site';
 
 useHead({
@@ -123,6 +124,11 @@ const rest = computed<FeedItem[]>(() => feed.value.slice(1));
         </div>
       </template>
     </div>
+
+    <!-- /blog is a hardcoded page (not a Sanity page doc) so we render the
+         StayConnectedSection here directly. Other pages get it via the
+         sectionMap. -->
+    <StayConnectedSection />
   </main>
 </template>
 

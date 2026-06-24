@@ -6,6 +6,7 @@ import { useSanity } from '@/composables/useSanity';
 import { getSocialIcon } from '@/composables/useSocialIcons';
 import { useDonateButton } from '@/composables/useDonateButton';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import FooterStayConnected from '@/components/layout/FooterStayConnected.vue';
 
 const site = useSiteStore();
 const route = useRoute();
@@ -150,6 +151,9 @@ const platformLabels: Record<string, string> = {
         </SmartLink>
       </div>
     </div>
+
+    <!-- Section 1.5: Stay Connected band -->
+    <FooterStayConnected />
 
     <!-- Section 2: Footer columns -->
     <div class="jc-footer__columns-section">
