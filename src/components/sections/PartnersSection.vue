@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import DiagonalSection from '@/components/sections/DiagonalSection.vue';
 import { sanityImage } from '@/composables/useSanityImage';
 import type { SanityImageSource } from '@/types/site';
@@ -40,6 +40,15 @@ const partners  = computed(() =>
     : defaultPartners
 );
 
+// Explicit user pause state. Composes with the existing hover/focus-within
+// pause: hover still pauses transiently, but `isPaused` is the persistent
+// signal that an explicit pause button provides — required for WCAG 2.2.2
+// since hover-to-pause isn't reachable for touch users.
+const isPaused = ref(false);
+function togglePaused() {
+  isPaused.value = !isPaused.value;
+}
+
 function partnerLogoUrl(partner: Partner): string {
   if (partner.logo) {
     try {
@@ -65,9 +74,29 @@ function partnerLogoUrl(partner: Partner): string {
 <template>
   <DiagonalSection :title="title" :color="bandColor" :content-bg="'var(--color-bg-secondary)'">
     <div class="partners-marquee">
+      <!-- WCAG 2.2.2 pause control. Lives OUTSIDE the masked __outer
+           container so the edge fade doesn't tint the button. Reachable
+           by touch, mouse, and keyboard; state announced via aria-pressed. -->
+      <button
+        v-if="partners.length"
+        type="button"
+        class="partners-marquee__pause"
+        :aria-pressed="isPaused"
+        :aria-label="isPaused ? 'Resume partner logo scrolling' : 'Pause partner logo scrolling'"
+        @click="togglePaused"
+      >
+        <svg v-if="isPaused" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path d="M3 2.5 13 8 3 13.5z" fill="currentColor" />
+        </svg>
+        <svg v-else viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <rect x="3.5" y="2.5" width="3" height="11" fill="currentColor" />
+          <rect x="9.5" y="2.5" width="3" height="11" fill="currentColor" />
+        </svg>
+      </button>
+
       <div
         v-if="partners.length"
-        class="partners-marquee__outer"
+        :class="['partners-marquee__outer', { 'is-paused': isPaused }]"
         role="region"
         aria-label="Our partners"
       >
@@ -141,8 +170,10 @@ function partnerLogoUrl(partner: Partner): string {
 </template>
 
 <style scoped>
-/* Marquee container — overflow:hidden clips the duplicate as it scrolls off */
+/* Marquee container — overflow:hidden clips the duplicate as it scrolls off.
+   Relative positioning anchors the absolute-positioned pause control. */
 .partners-marquee {
+  position: relative;
   padding: 2rem 0;
   overflow: hidden;
 }
@@ -165,21 +196,58 @@ function partnerLogoUrl(partner: Partner): string {
   );
 }
 
+/* Pause control — small circular button anchored top-right of the
+   marquee container. Lives as a SIBLING of __outer (not a child) so
+   the parent's edge mask doesn't tint it. */
+.partners-marquee__pause {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--jc-deep-green);
+  background: white;
+  color: var(--jc-deep-green);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.partners-marquee__pause:hover,
+.partners-marquee__pause:focus-visible {
+  background: var(--jc-deep-green);
+  color: white;
+  transform: scale(1.05);
+  outline: none;
+}
+.partners-marquee__pause:focus-visible {
+  box-shadow: 0 0 0 3px rgba(29, 95, 85, 0.3);
+}
+
 /* Track holds both lists side-by-side. The keyframes scroll one full
    list width (-50%, since the track is two lists wide), so when the
    animation loops the duplicate occupies the original's position
    — no visual jump.
    Scroll duration: increase for more logos, decrease for fewer.
-   4 logos: 45s | 8 logos: 35s | 12+ logos: 28s */
+   4 logos: 55s | 8 logos: 42s | 12+ logos: 34s
+   Bumped from 45s when logo height doubled (60->120px); larger items
+   moving at the same px/s read as faster, so we slow the loop. */
 .partners-marquee__track {
   display: flex;
   width: max-content;
-  animation: partners-scroll 45s linear infinite;
+  animation: partners-scroll 55s linear infinite;
 }
 
-/* Pause on hover OR when any child element receives focus. */
+/* Pause on hover, on focus-within, or while explicitly paused via the
+   visible pause button (is-paused class). focus-within keeps keyboard
+   users from losing scroll position as they tab to a logo. */
 .partners-marquee__outer:hover .partners-marquee__track,
-.partners-marquee__outer:focus-within .partners-marquee__track {
+.partners-marquee__outer:focus-within .partners-marquee__track,
+.partners-marquee__outer.is-paused .partners-marquee__track {
   animation-play-state: paused;
 }
 
@@ -293,5 +361,7 @@ function partnerLogoUrl(partner: Partner): string {
   }
   .partners-marquee__logo { filter: grayscale(0%); }
   .partners-marquee__link { opacity: 1; }
+  /* No animation to control — hide the pause button. */
+  .partners-marquee__pause { display: none; }
 }
 </style>
