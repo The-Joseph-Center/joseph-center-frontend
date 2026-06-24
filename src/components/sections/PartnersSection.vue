@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import DiagonalSection from '@/components/sections/DiagonalSection.vue';
 import { sanityImage } from '@/composables/useSanityImage';
 import type { SanityImageSource } from '@/types/site';
@@ -48,6 +48,56 @@ const isPaused = ref(false);
 function togglePaused() {
   isPaused.value = !isPaused.value;
 }
+
+// Pixel-precise loop: measure the first list's offsetWidth (always an
+// integer) and translate by exactly that many pixels per cycle. A %-based
+// translate of a track whose total width includes non-integer logo widths
+// (logos use width: auto from images) lands on a fractional pixel, and the
+// snap-back to 0 on each loop exposes that fraction as a visible hitch.
+const trackRef = ref<HTMLElement | null>(null);
+const firstListRef = ref<HTMLElement | null>(null);
+const listWidth = ref(0);
+
+function measure() {
+  if (!firstListRef.value || !trackRef.value) return;
+  const w = firstListRef.value.offsetWidth;
+  // Skip writes that would jolt the in-flight animation. The list naturally
+  // settles to a stable width after fonts/images load; we only need the
+  // final integer.
+  if (w && w !== listWidth.value) {
+    listWidth.value = w;
+    trackRef.value.style.setProperty('--list-width', `${w}px`);
+  }
+}
+
+let ro: ResizeObserver | null = null;
+
+onMounted(async () => {
+  await nextTick();
+  measure();
+  // Logos are loaded async — re-measure each time one finishes so the final
+  // width matches the post-load layout, not the pre-load placeholder layout.
+  firstListRef.value?.querySelectorAll('img').forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener('load', measure, { once: true });
+  });
+  if (typeof ResizeObserver !== 'undefined' && firstListRef.value) {
+    ro = new ResizeObserver(() => measure());
+    ro.observe(firstListRef.value);
+  } else {
+    window.addEventListener('resize', measure);
+  }
+});
+onBeforeUnmount(() => {
+  ro?.disconnect();
+  window.removeEventListener('resize', measure);
+});
+
+// Re-measure if the partners array changes (CMS edits with HMR, etc).
+watch(partners, async () => {
+  await nextTick();
+  measure();
+});
 
 function partnerLogoUrl(partner: Partner): string {
   if (partner.logo) {
@@ -100,13 +150,13 @@ function partnerLogoUrl(partner: Partner): string {
         role="region"
         aria-label="Our partners"
       >
-        <div class="partners-marquee__track">
+        <div ref="trackRef" class="partners-marquee__track">
           <!--
             Render the list twice so the second copy picks up exactly where
             the first leaves off — seamless loop. aria-hidden on the duplicate
             so screen readers only announce each partner once.
           -->
-          <ul class="partners-marquee__list">
+          <ul ref="firstListRef" class="partners-marquee__list">
             <li
               v-for="partner in partners"
               :key="partner.name"
@@ -261,7 +311,11 @@ function partnerLogoUrl(partner: Partner): string {
 
 @keyframes partners-scroll {
   from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(-50%, 0, 0); }
+  /* --list-width is set in px by JS after measuring the first list. The
+     fallback -50% covers SSR / pre-measurement frames; once JS has run, the
+     translate is exactly the list's integer pixel width, so the snap from
+     the end of one iteration back to 0 lines up exactly with the duplicate. */
+  to   { transform: translate3d(calc(-1 * var(--list-width, 50%)), 0, 0); }
 }
 
 .partners-marquee__list {
