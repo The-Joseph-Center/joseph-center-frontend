@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import type { SanityImageSource } from '@/types/site';
 
 interface PortableSpan { _type?: string; text?: string }
 interface PortableBlock { _type?: string; children?: PortableSpan[] }
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
 
 const props = defineProps<{
   event: {
@@ -15,7 +17,7 @@ const props = defineProps<{
     // blocks). On preview cards we want plain text, so we flatten the
     // spans into a short string.
     description?: PortableBlock[] | string | null;
-    image?: { asset?: { url?: string }; alt?: string | null } | null;
+    image?: ImageWithAlt | null;
   };
 }>();
 

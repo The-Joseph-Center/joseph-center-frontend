@@ -6,6 +6,10 @@ import { PortableText } from '@portabletext/vue';
 import type { TypedObject } from '@portabletext/types';
 import { useSanity } from '@/composables/useSanity';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { sanityImage } from '@/composables/useSanityImage';
+import type { SanityImageSource } from '@/types/site';
+
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
 
 interface RelatedResource {
   _id: string;
@@ -20,7 +24,7 @@ interface Post {
   publishedAt: string;
   postType?: 'newsletter' | 'manual';
   excerpt?: string | null;
-  featuredImage?: { asset?: { url?: string }; alt?: string | null } | null;
+  featuredImage?: ImageWithAlt | null;
   authorName?: string | null;
   authorIsOrg?: boolean;
   authorAvatar?: string | null;
@@ -32,9 +36,12 @@ interface Post {
 const route = useRoute();
 const router = useRouter();
 
+// featuredImage returns the raw inline object (asset ref + hotspot + crop +
+// alt) so the frontend can pipe it through sanityImage() and honor the
+// editor's crop/hotspot.
 const query = `*[_type == "post" && slug.current == $slug][0]{
   title, publishedAt, postType, excerpt,
-  featuredImage{ asset->{ url }, alt },
+  featuredImage,
   "authorName": author->name,
   "authorIsOrg": author->isOrg,
   "authorAvatar": author->avatar.asset->url,
@@ -63,6 +70,12 @@ watchEffect(() => {
 function formatDate(d: string): string {
   return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
+
+// Detail-page hero: 1600x900 (16:9). fit('crop') applies the editor's
+// crop+hotspot rect from Studio.
+function heroImageUrl(img: ImageWithAlt): string {
+  return sanityImage(img).width(1600).height(900).fit('crop').auto('format').url();
+}
 </script>
 
 <template>
@@ -90,8 +103,8 @@ function formatDate(d: string): string {
         </header>
 
         <img
-          v-if="post.featuredImage?.asset?.url"
-          :src="post.featuredImage.asset.url"
+          v-if="post.featuredImage?.asset"
+          :src="heroImageUrl(post.featuredImage)"
           :alt="post.featuredImage.alt || post.title"
           class="blog-post-page__image"
           loading="eager"

@@ -6,6 +6,7 @@ import BlogPostCard from '@/components/blog/BlogPostCard.vue';
 import BlogEpisodeCard from '@/components/blog/BlogEpisodeCard.vue';
 import BlogEventCard from '@/components/blog/BlogEventCard.vue';
 import BlogFeaturedCard from '@/components/blog/BlogFeaturedCard.vue';
+import type { SanityImageSource } from '@/types/site';
 
 useHead({
   title: 'Blog — The Joseph Center',
@@ -15,6 +16,8 @@ useHead({
   }],
 });
 
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
+
 interface PostItem {
   _id: string;
   _type: 'post';
@@ -23,7 +26,7 @@ interface PostItem {
   excerpt?: string | null;
   publishedAt: string;
   postType?: 'newsletter' | 'manual';
-  featuredImage?: { asset?: { url?: string }; alt?: string | null } | null;
+  featuredImage?: ImageWithAlt | null;
   authorName?: string | null;
   authorIsOrg?: boolean;
 }
@@ -43,7 +46,7 @@ interface EventItem {
   slug: { current: string };
   date?: string | null;
   description?: string | null;
-  image?: { asset?: { url?: string }; alt?: string | null } | null;
+  image?: ImageWithAlt | null;
 }
 type FeedItem = (PostItem | EpisodeItem | EventItem) & { feedDate: string };
 interface FeedResult {
@@ -57,10 +60,13 @@ interface FeedResult {
 //     as the original spec assumed.
 //   • post.publishedAt is `date`, coffeeEpisode.publishedAt is `datetime`,
 //     event.date is `date`. All compare cleanly as ISO strings.
+// featuredImage / image are returned as the raw inline objects (asset ref +
+// hotspot + crop + alt) so the frontend can pipe them through sanityImage()
+// and honor the crop/hotspot the editor set in Studio.
 const query = `{
   "posts": *[_type == "post"] | order(publishedAt desc) {
     _id, _type, title, slug, excerpt, publishedAt, postType,
-    featuredImage{ asset->{ url }, alt },
+    featuredImage,
     "authorName": author->name,
     "authorIsOrg": author->isOrg
   },
@@ -68,7 +74,7 @@ const query = `{
     _id, _type, title, videoId, thumbnailUrl, publishedAt, episodeNumber
   },
   "events": *[_type == "events"] | order(date desc) [0..5] {
-    _id, _type, title, slug, date, description, image{ asset->{ url }, alt }
+    _id, _type, title, slug, date, description, image
   }
 }`;
 

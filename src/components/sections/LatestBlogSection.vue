@@ -2,6 +2,10 @@
 import { computed } from 'vue';
 import { useSanity } from '@/composables/useSanity';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { sanityImage } from '@/composables/useSanityImage';
+import type { SanityImageSource } from '@/types/site';
+
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
 
 interface Section {
   heading?: string;
@@ -17,7 +21,7 @@ interface Post {
   excerpt?: string | null;
   publishedAt: string;
   postType?: 'newsletter' | 'manual';
-  featuredImage?: { asset?: { url?: string }; alt?: string | null } | null;
+  featuredImage?: ImageWithAlt | null;
 }
 
 const props = defineProps<{ section?: Section | null }>();
@@ -32,10 +36,12 @@ const ctaLabel = computed(() => props.section?.ctaLabel || 'Read All Posts →')
 const postCount = computed(() => Math.min(Math.max(props.section?.postCount ?? 3, 1), 6));
 
 // Fetch one extra so a future "View Featured Story" pull never starves the grid.
+// featuredImage is returned as the raw inline object (asset ref + hotspot +
+// crop + alt) so sanityImage() can honor the editor's crop/hotspot.
 const query = computed(
   () => `*[_type == "post"] | order(publishedAt desc)[0...${postCount.value}]{
     _id, title, slug, excerpt, publishedAt, postType,
-    featuredImage{ asset->{ url }, alt }
+    featuredImage
   }`
 );
 
@@ -47,6 +53,11 @@ function formatDate(d: string): string {
 
 function typeLabel(t?: string): string {
   return t === 'newsletter' ? 'Newsletter' : 'Article';
+}
+
+// 600x340 ≈ 16:9 at 2x density for a typical home-page teaser card.
+function cardImageUrl(img: ImageWithAlt): string {
+  return sanityImage(img).width(600).height(340).fit('crop').auto('format').url();
 }
 </script>
 
@@ -73,9 +84,9 @@ function typeLabel(t?: string): string {
               class="latest-blog__card"
               :class="post.postType === 'newsletter' ? 'is-newsletter' : 'is-article'"
             >
-              <div v-if="post.featuredImage?.asset?.url" class="latest-blog__media">
+              <div v-if="post.featuredImage?.asset" class="latest-blog__media">
                 <img
-                  :src="post.featuredImage.asset.url"
+                  :src="cardImageUrl(post.featuredImage)"
                   :alt="post.featuredImage.alt || post.title"
                   class="latest-blog__image"
                   loading="lazy"

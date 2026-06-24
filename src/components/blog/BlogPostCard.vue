@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { sanityImage } from '@/composables/useSanityImage';
+import type { SanityImageSource } from '@/types/site';
+
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
 
 defineProps<{
   post: {
@@ -9,7 +13,7 @@ defineProps<{
     excerpt?: string | null;
     publishedAt: string;
     postType?: 'newsletter' | 'manual';
-    featuredImage?: { asset?: { url?: string }; alt?: string | null } | null;
+    featuredImage?: ImageWithAlt | null;
     authorName?: string | null;
     authorIsOrg?: boolean;
   };
@@ -17,6 +21,12 @@ defineProps<{
 
 function formatDate(d: string): string {
   return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+// Builds a cropped/hotspotted URL. 600x340 ≈ 16:9 at 2x density for a
+// typical grid card. fit('crop') applies the editor's crop+hotspot.
+function cardImageUrl(img: ImageWithAlt): string {
+  return sanityImage(img).width(600).height(340).fit('crop').auto('format').url();
 }
 </script>
 
@@ -27,8 +37,8 @@ function formatDate(d: string): string {
   >
     <SmartLink :to="`/blog/${post.slug.current}`" class="blog-post-card__link">
       <img
-        v-if="post.featuredImage?.asset?.url"
-        :src="post.featuredImage.asset.url"
+        v-if="post.featuredImage?.asset"
+        :src="cardImageUrl(post.featuredImage)"
         :alt="post.featuredImage.alt || post.title"
         class="blog-post-card__image"
         loading="lazy"

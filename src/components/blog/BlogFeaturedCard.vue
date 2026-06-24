@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { sanityImage } from '@/composables/useSanityImage';
+import type { SanityImageSource } from '@/types/site';
 
 // Hero card for the top of /blog. Accepts any of the three feed item shapes
 // (post / coffeeEpisode / events) and renders a wider, image-left layout so
@@ -8,6 +10,7 @@ import SmartLink from '@/components/ui/SmartLink.vue';
 
 interface PortableSpan { _type?: string; text?: string }
 interface PortableBlock { _type?: string; children?: PortableSpan[] }
+type ImageWithAlt = SanityImageSource & { alt?: string | null };
 
 interface PostItem {
   _id: string;
@@ -17,7 +20,7 @@ interface PostItem {
   excerpt?: string | null;
   publishedAt: string;
   postType?: 'newsletter' | 'manual';
-  featuredImage?: { asset?: { url?: string }; alt?: string | null } | null;
+  featuredImage?: ImageWithAlt | null;
   authorName?: string | null;
   authorIsOrg?: boolean;
 }
@@ -37,7 +40,7 @@ interface EventItem {
   slug: { current: string };
   date?: string | null;
   description?: PortableBlock[] | string | null;
-  image?: { asset?: { url?: string }; alt?: string | null } | null;
+  image?: ImageWithAlt | null;
 }
 type Item = PostItem | EpisodeItem | EventItem;
 
@@ -71,12 +74,20 @@ const dateText = computed<string>(() => {
   return formatDate(props.item.publishedAt);
 });
 
+// Hero target: 1600x900 (16:9). fit('crop') applies the editor's
+// crop+hotspot rect; coffeeEpisode keeps its YouTube thumbnail since it
+// doesn't carry a Sanity image asset.
+function heroUrl(img: ImageWithAlt): string {
+  return sanityImage(img).width(1600).height(900).fit('crop').auto('format').url();
+}
 const imageUrl = computed<string | null>(() => {
-  if (props.item._type === 'post') return props.item.featuredImage?.asset?.url ?? null;
+  if (props.item._type === 'post') {
+    return props.item.featuredImage?.asset ? heroUrl(props.item.featuredImage) : null;
+  }
   if (props.item._type === 'coffeeEpisode') {
     return props.item.thumbnailUrl ?? `https://img.youtube.com/vi/${props.item.videoId}/maxresdefault.jpg`;
   }
-  return props.item.image?.asset?.url ?? null;
+  return props.item.image?.asset ? heroUrl(props.item.image) : null;
 });
 
 const imageAlt = computed<string>(() => {
