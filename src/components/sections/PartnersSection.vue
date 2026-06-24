@@ -219,9 +219,9 @@ function partnerLogoUrl(partner: Partner): string {
 }
 
 .partners-marquee__logo {
-  height: 60px;
+  height: 120px;
   width: auto;
-  max-width: 160px;
+  max-width: 320px;
   object-fit: contain;
   display: block;
   filter: grayscale(100%);
@@ -245,7 +245,7 @@ function partnerLogoUrl(partner: Partner): string {
 }
 .partners-marquee__link--dark-bg .partners-marquee__logo {
   filter: none;
-  height: 52px;
+  height: 104px;
 }
 .partners-marquee__outer:hover .partners-marquee__link--dark-bg:hover,
 .partners-marquee__outer:focus-within .partners-marquee__link--dark-bg:focus {
