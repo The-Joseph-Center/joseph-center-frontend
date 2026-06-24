@@ -239,6 +239,14 @@ function partnerLogoUrl(partner: Partner): string {
 .partners-marquee__track {
   display: flex;
   width: max-content;
+  /* Force the track onto its own GPU layer so the browser composites the
+     scroll without rasterizing on the main thread. Combined with translate3d
+     in the keyframes, this removes the subpixel jump some browsers show at
+     the loop boundary when list widths aren't integer pixels (logos use
+     width: auto, which produces non-integer totals). */
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
   animation: partners-scroll 55s linear infinite;
 }
 
@@ -252,8 +260,8 @@ function partnerLogoUrl(partner: Partner): string {
 }
 
 @keyframes partners-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
 }
 
 .partners-marquee__list {
