@@ -21,7 +21,10 @@ function formatDate(d: string): string {
 </script>
 
 <template>
-  <article class="blog-post-card">
+  <article
+    class="blog-post-card"
+    :class="post.postType === 'newsletter' ? 'is-newsletter' : 'is-article'"
+  >
     <SmartLink :to="`/blog/${post.slug.current}`" class="blog-post-card__link">
       <img
         v-if="post.featuredImage?.asset?.url"
@@ -83,10 +86,16 @@ function formatDate(d: string): string {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--jc-gold);
-  background: rgba(202, 162, 48, 0.1);
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
+}
+.is-newsletter .blog-post-card__type {
+  color: var(--jc-gold);
+  background: rgba(202, 162, 48, 0.12);
+}
+.is-article .blog-post-card__type {
+  color: var(--jc-deep-green);
+  background: rgba(29, 95, 85, 0.1);
 }
 
 .blog-post-card__date,

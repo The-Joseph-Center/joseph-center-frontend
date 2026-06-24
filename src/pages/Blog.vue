@@ -5,6 +5,7 @@ import { useSanity } from '@/composables/useSanity';
 import BlogPostCard from '@/components/blog/BlogPostCard.vue';
 import BlogEpisodeCard from '@/components/blog/BlogEpisodeCard.vue';
 import BlogEventCard from '@/components/blog/BlogEventCard.vue';
+import BlogFeaturedCard from '@/components/blog/BlogFeaturedCard.vue';
 
 useHead({
   title: 'Blog — The Joseph Center',
@@ -82,6 +83,11 @@ const feed = computed<FeedItem[]>(() => {
     .filter((item) => item.feedDate)
     .sort((a, b) => new Date(b.feedDate).getTime() - new Date(a.feedDate).getTime()) as FeedItem[];
 });
+
+// Layout split: newest item becomes the featured hero; the remainder fills
+// a two-column grid below at md+ widths. Single column on mobile.
+const featured = computed<FeedItem | null>(() => feed.value[0] ?? null);
+const rest = computed<FeedItem[]>(() => feed.value.slice(1));
 </script>
 
 <template>
@@ -99,13 +105,17 @@ const feed = computed<FeedItem[]>(() => {
         <p>No posts yet — check back soon.</p>
       </div>
 
-      <div v-else class="blog-page__feed">
-        <template v-for="item in feed" :key="item._id">
-          <BlogPostCard v-if="item._type === 'post'" :post="item" />
-          <BlogEpisodeCard v-else-if="item._type === 'coffeeEpisode'" :episode="item" />
-          <BlogEventCard v-else-if="item._type === 'events'" :event="item" />
-        </template>
-      </div>
+      <template v-else>
+        <BlogFeaturedCard v-if="featured" :item="featured" class="blog-page__featured" />
+
+        <div v-if="rest.length" class="blog-page__grid">
+          <template v-for="item in rest" :key="item._id">
+            <BlogPostCard v-if="item._type === 'post'" :post="item" />
+            <BlogEpisodeCard v-else-if="item._type === 'coffeeEpisode'" :episode="item" />
+            <BlogEventCard v-else-if="item._type === 'events'" :event="item" />
+          </template>
+        </div>
+      </template>
     </div>
   </main>
 </template>
@@ -127,15 +137,26 @@ const feed = computed<FeedItem[]>(() => {
 }
 
 .blog-page__body {
-  max-width: 780px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 3rem 1.5rem 4rem;
 }
 
-.blog-page__feed {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.blog-page__featured {
+  margin-bottom: 2.5rem;
+}
+
+.blog-page__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .blog-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
 }
 
 .blog-page__state {

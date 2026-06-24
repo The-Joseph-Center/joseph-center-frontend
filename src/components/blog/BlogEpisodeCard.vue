@@ -63,16 +63,15 @@ function formatDate(d: string): string {
 .blog-episode-card:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); }
 
 .blog-episode-card__link {
-  display: flex;
+  display: block;
   text-decoration: none;
   color: inherit;
-  gap: 0;
 }
 
 .blog-episode-card__thumb-wrap {
   position: relative;
-  width: 280px;
-  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   background: var(--jc-charcoal, #2c3531);
 }
 .blog-episode-card__thumb {
@@ -136,8 +135,4 @@ function formatDate(d: string): string {
   color: var(--jc-deep-green);
 }
 
-@media (max-width: 600px) {
-  .blog-episode-card__link { flex-direction: column; }
-  .blog-episode-card__thumb-wrap { width: 100%; aspect-ratio: 16 / 9; }
-}
 </style>
