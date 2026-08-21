@@ -77,7 +77,9 @@ export interface DonateConfig {
   externalUrl?: string;
 }
 
-export type DonationPlatform = 'colorado-gives' | 'harness' | 'stripe';
+// Giving runs entirely through the on-site Stripe flow at /donate. The former
+// platform switcher (Colorado Gives / Harness) was removed once the Colorado
+// Gives campaign ended and Harness was retired.
 
 export interface CampaignOverlay {
   enabled: boolean;
@@ -90,9 +92,7 @@ export interface CampaignOverlay {
 }
 
 export interface DonationConfig {
-  activePlatform: DonationPlatform;
-  coloradoGivesUrl: string;
-  harnessUrl: string;
   campaignName: string;
+  donorPortalUrl?: string | null;
   campaignOverlay: CampaignOverlay | null;
 }

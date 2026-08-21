@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, RouterLink } from 'vue-router';
 import { loadStripe, type Stripe, type StripeElements } from '@stripe/stripe-js';
 import CampaignProgressBar from './CampaignProgressBar.vue';
 import SpotlightCard from './SpotlightCard.vue';
+import {
+  feeCents,
+  chargeCents,
+  MIN_DONATION_CENTS,
+  MAX_DONATION_CENTS,
+} from '@/lib/donationFees';
 
 // Standalone 3-screen donation flow. Renders the give → info → payment →
 // confirmation states with embedded Stripe Elements. Used by:
@@ -30,7 +36,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const route = useRoute();
-const provider = import.meta.env.VITE_DONATION_PROVIDER || 'harness';
 
 // ─── Step state ───────────────────────────────────────────────────────────
 
@@ -62,19 +67,15 @@ const baseAmountDollars = computed<number>(() => {
   return selectedAmount.value as number;
 });
 
-// Fee coverage math: (amount + 0.30) / (1 - 0.029)
-const FEE_RATE = 0.029;
-const FEE_FLAT = 0.30;
-function withCoveredFee(base: number): number {
-  return Math.ceil(((base + FEE_FLAT) / (1 - FEE_RATE)) * 100) / 100;
-}
+// Fee coverage math lives in @/lib/donationFees so this form and the
+// create-donation-session function can never quote different totals. Rate is
+// Stripe's discounted 501(c)(3) rate (2.2% + 30c) that JC is enrolled in.
 const feeCovered = ref(false);
-const totalDollars = computed(() =>
-  feeCovered.value ? withCoveredFee(baseAmountDollars.value) : baseAmountDollars.value
+const baseAmountCents = computed(() => Math.round(baseAmountDollars.value * 100));
+const totalDollars = computed(
+  () => chargeCents(baseAmountCents.value, feeCovered.value) / 100
 );
-const feeAmountDollars = computed(() =>
-  Math.max(0, totalDollars.value - baseAmountDollars.value)
-);
+const feeAmountDollars = computed(() => feeCents(baseAmountCents.value) / 100);
 
 // ─── Donor info ───────────────────────────────────────────────────────────
 
@@ -89,6 +90,9 @@ const donor = reactive({
   zip: '',
 });
 const emailOptIn = ref(true);
+// Honeypot — hidden from real donors, filled in by naive bots. Mirrors the
+// _gotcha field the Gatsby donate form used.
+const gotcha = ref('');
 const hasMailingAddress = computed(() =>
   Boolean(donor.street.trim() && donor.city.trim() && donor.state.trim() && donor.zip.trim())
 );
@@ -138,8 +142,13 @@ function fmtMoney(d: number): string {
 // ─── Step transitions ─────────────────────────────────────────────────────
 
 function continueToInfo() {
-  if (baseAmountDollars.value < 1) {
+  if (baseAmountCents.value < MIN_DONATION_CENTS) {
     paymentError.value = 'Please choose or enter an amount of at least $1.';
+    return;
+  }
+  if (baseAmountCents.value > MAX_DONATION_CENTS) {
+    paymentError.value =
+      `For gifts over ${fmtMoney(MAX_DONATION_CENTS / 100)}, please contact us directly so we can help.`;
     return;
   }
   paymentError.value = '';
@@ -163,9 +172,12 @@ async function continueToPayment() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amountCents: Math.round(totalDollars.value * 100),
-        baseAmountCents: Math.round(baseAmountDollars.value * 100),
+        // Only the intended gift and a yes/no on fees are sent. The charged
+        // total is derived server-side so a crafted request can't set its own
+        // price — same contract the Gatsby function used.
+        baseAmountCents: baseAmountCents.value,
         frequency: frequency.value,
+        _gotcha: gotcha.value,
         campaignSlug: campaignSlug.value || undefined,
         donor: {
           firstName: donor.firstName,
@@ -193,7 +205,10 @@ async function continueToPayment() {
     await nextTick();
     await mountStripeElement();
   } catch (err) {
-    paymentError.value = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+    paymentError.value =
+      err instanceof Error
+        ? err.message
+        : "We couldn't reach our payment processor. Please check your connection and try again.";
   } finally {
     submitting.value = false;
   }
@@ -246,6 +261,7 @@ function goBack() {
 
 function resetAll() {
   step.value = 'give';
+  gotcha.value = '';
   frequency.value = props.initialFrequency ?? 'monthly';
   selectedAmount.value = 25;
   customAmount.value = '';
@@ -273,12 +289,22 @@ watch(() => props.resetKey, (next, prev) => {
 // ─── Initial data load ────────────────────────────────────────────────────
 
 async function loadContext() {
-  if (provider !== 'stripe') return;
-
   if (props.initialFrequency) {
     frequency.value = props.initialFrequency;
   } else if (route.query.frequency === 'one-time') {
     frequency.value = 'one-time';
+  }
+
+  // ?amount=100 pre-selects a gift size — used by the partnership tier CTAs
+  // so "Subscribe $100/mo" opens the form already set to $100.
+  const amountParam = Number(route.query.amount);
+  if (Number.isFinite(amountParam) && amountParam >= 1) {
+    if (currentPresets.value.includes(amountParam)) {
+      selectedAmount.value = amountParam;
+    } else {
+      selectedAmount.value = 'custom';
+      customAmount.value = String(amountParam);
+    }
   }
 
   if (campaignSlug.value) {
@@ -309,8 +335,7 @@ watch(campaignSlug, loadContext);
 </script>
 
 <template>
-  <!-- Stripe-powered flow -->
-  <div v-if="provider === 'stripe'" class="donation-flow">
+  <div class="donation-flow">
     <CampaignProgressBar
       v-if="campaign && step !== 'success'"
       :name="campaign.name"
@@ -456,7 +481,22 @@ watch(campaignSlug, loadContext);
           <span>I'd like to receive email updates from The Joseph Center</span>
         </label>
 
-        <p v-if="paymentError" class="form-error" role="alert">{{ paymentError }}</p>
+        <!-- Honeypot — hidden from real donors -->
+        <input
+          v-model="gotcha"
+          type="text"
+          name="_gotcha"
+          tabindex="-1"
+          autocomplete="off"
+          class="honeypot"
+          aria-hidden="true"
+        />
+
+        <p v-if="paymentError" class="form-error" role="alert">
+          {{ paymentError }}
+          <RouterLink to="/contact">Contact us</RouterLink>
+          if the trouble continues and we will gladly take your gift by phone.
+        </p>
 
         <button type="submit" class="btn-primary donation-cta" :disabled="submitting">
           {{ submitting ? 'Just a moment…' : 'Continue →' }}
@@ -497,6 +537,10 @@ watch(campaignSlug, loadContext);
         {{ submitting ? 'Processing…' : 'Complete My Gift →' }}
       </button>
 
+      <p class="legal-copy legal-copy--trust">
+        Payments are processed securely by Stripe. The Joseph Center never sees
+        or stores your card details.
+      </p>
       <p class="legal-copy">
         By completing your gift, you agree to our
         <a href="/terms-and-conditions">Terms &amp; Conditions</a> and
@@ -540,14 +584,6 @@ watch(campaignSlug, loadContext);
       :link-url="spotlight.link_url"
       class="donation-flow__spotlight"
     />
-  </div>
-
-  <!-- Fallback when Stripe isn't the active provider -->
-  <div v-else class="donation-flow__fallback">
-    <p>
-      Online giving is being set up. In the meantime, please contact us at
-      <a href="mailto:jc@josephcentergj.com">jc@josephcentergj.com</a>.
-    </p>
   </div>
 </template>
 
@@ -780,12 +816,11 @@ watch(campaignSlug, loadContext);
   margin: 0.5rem 0 0;
 }
 
-.donation-flow__fallback {
-  padding: 2rem;
-  text-align: center;
-  color: var(--color-text-muted);
+.honeypot {
+  display: none;
 }
-.donation-flow__fallback a {
-  color: var(--jc-deep-green);
+
+.legal-copy--trust {
+  color: var(--color-text);
 }
 </style>

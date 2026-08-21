@@ -1,6 +1,12 @@
 import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
 import { createClient } from '@libsql/client/web';
+import {
+  chargeCents,
+  feeCents,
+  MIN_DONATION_CENTS,
+  MAX_DONATION_CENTS,
+} from '../../src/lib/donationFees';
 
 // Creates a PaymentIntent (one-time) or Subscription (monthly) and returns
 // the client_secret the Stripe Payment Element needs to confirm payment.
@@ -8,8 +14,10 @@ import { createClient } from '@libsql/client/web';
 // webhook (verify-donation.ts) later flips that row to 'succeeded' and
 // triggers the confirmation email.
 //
-// Gated by VITE_DONATION_PROVIDER — returns 501 unless 'stripe'. Lets us
-// keep Harness as the live flow until env is flipped.
+// The browser sends only the donor's intended gift (baseAmountCents) and a
+// yes/no on covering fees. The amount actually charged is derived here via the
+// shared fee module, so a crafted request can't set its own price and the
+// figure quoted in the form always matches the charge.
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -38,9 +46,9 @@ interface DonorInput {
 }
 
 interface RequestBody {
-  amountCents: number;          // total to charge (after any fee coverage)
   baseAmountCents: number;      // what the donor selected, pre-fee-coverage
   frequency: Frequency;
+  _gotcha?: string;             // honeypot — populated only by bots
   campaignSlug?: string;        // optional campaign context
   donor: DonorInput;
   feeCovered: boolean;
@@ -52,8 +60,12 @@ function jsonError(statusCode: number, message: string) {
 }
 
 function validate(body: Partial<RequestBody>): string | null {
-  if (!body.amountCents || typeof body.amountCents !== 'number' || body.amountCents < 100) {
-    return 'amountCents must be at least 100 (i.e. $1.00)';
+  const base = body.baseAmountCents;
+  if (typeof base !== 'number' || !Number.isFinite(base) || base < MIN_DONATION_CENTS) {
+    return `Please enter an amount of at least $${(MIN_DONATION_CENTS / 100).toFixed(2)}.`;
+  }
+  if (base > MAX_DONATION_CENTS) {
+    return `For gifts over $${(MAX_DONATION_CENTS / 100).toLocaleString()}, please contact us directly so we can help.`;
   }
   if (body.frequency !== 'one-time' && body.frequency !== 'monthly') {
     return 'frequency must be "one-time" or "monthly"';
@@ -149,11 +161,6 @@ export const handler: Handler = async (event) => {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  const provider = process.env.VITE_DONATION_PROVIDER || 'harness';
-  if (provider !== 'stripe') {
-    return jsonError(501, 'Stripe donations not yet activated. Set VITE_DONATION_PROVIDER=stripe to enable.');
-  }
-
   if (event.httpMethod !== 'POST') {
     return jsonError(405, 'Method not allowed');
   }
@@ -168,8 +175,20 @@ export const handler: Handler = async (event) => {
     return jsonError(400, 'Invalid JSON body');
   }
 
+  // Honeypot — a real donor never fills this in. Return a plausible-looking
+  // success so the bot doesn't learn it was caught, but touch nothing.
+  if (body._gotcha) {
+    return { statusCode: 200, headers: JSON_HEADERS, body: JSON.stringify({ clientSecret: '', donationId: '' }) };
+  }
+
   const validationError = validate(body);
   if (validationError) return jsonError(400, validationError);
+
+  // Derived here, never taken from the request.
+  const baseAmountCents = body.baseAmountCents;
+  const feeCovered = body.feeCovered === true;
+  const amountCents = chargeCents(baseAmountCents, feeCovered);
+  const coveredCents = feeCovered ? feeCents(baseAmountCents) : 0;
 
   // Pin API version — stripe-node 22 defaults to 2025-09-30 where the
   // subscription response was restructured (`latest_invoice.payment_intent`
@@ -207,7 +226,7 @@ export const handler: Handler = async (event) => {
 
     if (body.frequency === 'one-time') {
       const intent = await stripe.paymentIntents.create({
-        amount: body.amountCents,
+        amount: amountCents,
         currency: 'usd',
         customer: customer.id,
         automatic_payment_methods: { enabled: true },
@@ -218,9 +237,10 @@ export const handler: Handler = async (event) => {
           frequency: 'one-time',
           campaign_id: campaignId ?? '',
           campaign_slug: body.campaignSlug ?? '',
-          fee_covered: String(body.feeCovered),
+          fee_covered: String(feeCovered),
           email_opt_in: String(body.emailOptIn),
-          base_amount_cents: String(body.baseAmountCents),
+          base_amount_cents: String(baseAmountCents),
+          fees_covered_cents: String(coveredCents),
         },
       });
       clientSecret = intent.client_secret!;
@@ -234,7 +254,7 @@ export const handler: Handler = async (event) => {
           price_data: {
             currency: 'usd',
             product: productId,
-            unit_amount: body.amountCents,
+            unit_amount: amountCents,
             recurring: { interval: 'month' },
           },
         }],
@@ -248,9 +268,10 @@ export const handler: Handler = async (event) => {
           frequency: 'monthly',
           campaign_id: campaignId ?? '',
           campaign_slug: body.campaignSlug ?? '',
-          fee_covered: String(body.feeCovered),
+          fee_covered: String(feeCovered),
           email_opt_in: String(body.emailOptIn),
-          base_amount_cents: String(body.baseAmountCents),
+          base_amount_cents: String(baseAmountCents),
+          fees_covered_cents: String(coveredCents),
         },
       });
 
@@ -271,13 +292,13 @@ export const handler: Handler = async (event) => {
             RETURNING id`,
       args: [
         donorId,
-        body.amountCents,
+        amountCents,
         body.frequency,
         campaignId,
         stripePaymentId,
         stripeSubscriptionId,
         customer.id,
-        body.feeCovered ? 1 : 0,
+        feeCovered ? 1 : 0,
         body.emailOptIn ? 1 : 0,
       ],
     });

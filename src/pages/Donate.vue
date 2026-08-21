@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useHead } from '@unhead/vue';
-import { useSanity } from '@/composables/useSanity';
-import { sectionMap, pageQuery } from '@/composables/useSections';
-import { useRevealObserver } from '@/composables/useRevealObserver';
 import DonationFlow from '@/components/donate/DonationFlow.vue';
+import { useSiteStore } from '@/stores/useSiteStore';
+
+// /donate is a real, linkable page — it's the URL JC shares on social media
+// and in print, so it renders the full donation flow on its own rather than
+// only existing as a modal. DonateModal mounts the same DonationFlow component,
+// so the two surfaces can never drift apart.
+
+const site = useSiteStore();
+// Stripe Customer Portal — shown only once the URL is configured in Studio.
+const donorPortalUrl = computed(() => site.donorPortalUrl);
 
 useHead({
   title: 'Donate — The Joseph Center',
@@ -11,33 +19,28 @@ useHead({
     { name: 'description', content: 'Support The Joseph Center in Grand Junction with a one-time or monthly gift. 100% community & foundation funded — every dollar stays local.' },
   ],
 });
-
-const provider = import.meta.env.VITE_DONATION_PROVIDER || 'harness';
-
-// Legacy Sanity sections render when provider != 'stripe' (Harness fallback)
-interface LegacyPage {
-  sections?: { _key: string; _type: string }[];
-}
-const { data: page } = useSanity<LegacyPage>(pageQuery('/donate'));
-useRevealObserver(page);
 </script>
 
 <template>
   <main class="page page--donate">
-    <template v-if="provider === 'stripe'">
-      <div class="donate-banner">
-        <h1 class="donate-banner__title">Give</h1>
-      </div>
-      <div class="donate-wrap">
-        <DonationFlow />
-      </div>
-    </template>
+    <div class="donate-banner">
+      <h1 class="donate-banner__title">Give to The Joseph Center</h1>
+    </div>
 
-    <template v-else>
-      <template v-for="section in (page?.sections || [])" :key="section._key">
-        <component :is="sectionMap[section._type]" v-if="sectionMap[section._type]" :section="section" />
-      </template>
-    </template>
+    <p class="donate-intro">
+      Your gift provides hope, stability, and a sense of belonging to our
+      neighbors in need. Every dollar goes to work right here in our community.
+    </p>
+
+    <div class="donate-wrap">
+      <DonationFlow />
+
+      <p v-if="donorPortalUrl" class="donate-manage">
+        Already giving monthly?
+        <a :href="donorPortalUrl" target="_blank" rel="noopener noreferrer">Manage your gift</a>
+        to update your card, change your amount, or pause your giving.
+      </p>
+    </div>
   </main>
 </template>
 
@@ -57,9 +60,31 @@ useRevealObserver(page);
   margin: 0;
 }
 
+.donate-intro {
+  max-width: 600px;
+  margin: 1.75rem auto 0;
+  padding: 0 1.5rem;
+  text-align: center;
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
 .donate-wrap {
   max-width: 640px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.donate-manage {
+  margin: 2rem 0 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+.donate-manage a {
+  color: var(--jc-deep-green);
+  font-weight: 600;
 }
 </style>

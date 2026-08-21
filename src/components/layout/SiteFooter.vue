@@ -13,15 +13,13 @@ const route = useRoute();
 const year = new Date().getFullYear();
 
 // When the footer CTA band points at /donate (which it almost always does
-// — "Support Our Mission"), route the click through useDonateButton so the
-// platform-routing rules apply. Otherwise fall back to a regular SmartLink.
-const { donateHref, donateTarget, donateRel, handleDonateClick, platform } = useDonateButton();
+// — "Support Our Mission"), route the click through useDonateButton so it opens
+// the donation modal. Otherwise fall back to a regular SmartLink.
+const { donateHref, handleDonateClick } = useDonateButton();
 const isDonateCta = computed(() => {
   const url = (site.ctaFooterUrl || site.ctaUrl || '').trim();
   return url === '/donate' || url === 'donate';
 });
-const useExternalDonateAnchor = computed(() => platform.value !== 'stripe');
-
 // Don't render the CTA band when the current page IS the CTA's destination
 // (avoids a "Donate" button on /donate, "Contact" on /contact, etc).
 const ctaTarget = computed(() => site.ctaFooterUrl || site.ctaUrl || '');
@@ -125,27 +123,16 @@ const platformLabels: Record<string, string> = {
         <h2 class="cta-band__heading">{{ site.ctaHeadline }}</h2>
         <p class="cta-band__text">{{ site.ctaSubtext }}</p>
 
-        <!-- When the CTA points at /donate, route via the platform-aware
-             composable. External platforms render as <a target="_blank">;
-             Stripe renders as a <button> that opens the modal. -->
+        <!-- When the CTA points at /donate, open the donation modal in place.
+             Still a real <a href> so open-in-new-tab keeps working. -->
         <a
-          v-if="isDonateCta && useExternalDonateAnchor"
+          v-if="isDonateCta"
           :href="donateHref"
-          :target="donateTarget"
-          :rel="donateRel"
           class="cta-band__button"
           @click="handleDonateClick"
         >
           {{ site.ctaFooterLabel || site.ctaLabel }}
         </a>
-        <button
-          v-else-if="isDonateCta"
-          type="button"
-          class="cta-band__button"
-          @click="handleDonateClick"
-        >
-          {{ site.ctaFooterLabel || site.ctaLabel }}
-        </button>
         <SmartLink v-else :to="site.ctaFooterUrl || site.ctaUrl" class="cta-band__button">
           {{ site.ctaFooterLabel || site.ctaLabel }}
         </SmartLink>
@@ -193,8 +180,8 @@ const platformLabels: Record<string, string> = {
     <!-- Section 3: Bottom Bar -->
     <div class="bottom-bar">
       <div class="bottom-bar__inner">
-        <!-- Legal nav row -->
-        <nav v-if="site.legalNav.length" class="bottom-bar__legal">
+        <!-- Legal nav row + donor portal -->
+        <nav v-if="site.legalNav.length || site.donorPortalUrl" class="bottom-bar__legal">
           <RouterLink
             v-for="item in site.legalNav"
             :key="item.to"
@@ -203,6 +190,18 @@ const platformLabels: Record<string, string> = {
           >
             {{ item.label }}
           </RouterLink>
+          <!-- Stripe-hosted portal for existing monthly donors. Outside
+               sign-in flow, so it opens in a new tab. Hidden until the URL is
+               set in Studio. -->
+          <a
+            v-if="site.donorPortalUrl"
+            :href="site.donorPortalUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="bottom-bar__legal-link"
+          >
+            Donor Portal
+          </a>
         </nav>
 
         <!-- Copyright + Social row -->

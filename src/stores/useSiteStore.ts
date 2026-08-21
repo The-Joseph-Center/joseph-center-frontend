@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { SiteConfig, CampaignOverlay, DonationPlatform } from '@/types/site';
+import type { SiteConfig, CampaignOverlay } from '@/types/site';
 
 export const useSiteStore = defineStore('site', {
   state: (): SiteConfig => ({
@@ -99,21 +99,16 @@ export const useSiteStore = defineStore('site', {
       if (overlay.expiresAt && now > new Date(overlay.expiresAt)) return null;
       return overlay;
     },
-    // Resolved active platform. Defaults to 'stripe' when the Sanity config
-    // hasn't loaded yet so the internal flow is the safe fallback.
-    activeDonationPlatform(): DonationPlatform {
-      return this.donationConfig?.activePlatform ?? 'stripe';
-    },
-    // Resolved donate URL/path for the current platform.
+    // Every Give button routes to the on-site flow. Kept as a getter so the
+    // path stays defined in exactly one place.
     donateUrl(): string {
-      const config = this.donationConfig;
-      if (!config) return '/donate';
-      switch (config.activePlatform) {
-        case 'colorado-gives': return config.coloradoGivesUrl || '/donate';
-        case 'harness':        return config.harnessUrl || '/donate';
-        case 'stripe':         return '/donate';
-        default:               return '/donate';
-      }
+      return '/donate';
+    },
+    // Stripe Customer Portal login link, for existing monthly donors to update
+    // their card, change their amount, or cancel. Empty until the URL is set in
+    // Studio — consumers hide the link rather than render a dead one.
+    donorPortalUrl(): string {
+      return this.donationConfig?.donorPortalUrl?.trim() || '';
     },
   },
 });

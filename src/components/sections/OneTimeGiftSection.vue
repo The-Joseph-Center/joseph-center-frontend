@@ -3,19 +3,14 @@ import { computed, ref } from 'vue';
 import { useSiteStore } from '@/stores/useSiteStore';
 import { useDonateButton } from '@/composables/useDonateButton';
 
-// Sanity-driven section rendered on /donate. Behavior switches on the active
-// donation platform (sourced from siteSettings.donationConfig in Sanity):
-//   • 'colorado-gives' → big redirect button to Colorado Gives
-//   • 'harness'        → "Give Now" button that opens Harness widget modal,
-//                        plus a fallback direct link
-//   • 'stripe'         → either the standard "Give Now" (internal /donate
-//                        modal/page) or a two-card layout when an active
-//                        campaign overlay is enabled (campaign vs. Stripe
-//                        side-by-side)
+// Sanity-driven section. Giving always runs through our own Stripe flow, so
+// this renders either:
+//   • the standard "Give Now" panel (opens the /donate modal), or
+//   • a two-card layout when an active campaign overlay is configured in
+//     Sanity — the featured campaign beside the direct-giving option.
 //
-// The Sanity `section` doc only supplies heading + subheading. All routing
-// is store-driven so flipping platforms doesn't require touching this
-// component.
+// The Sanity `section` doc only supplies heading + subheading; the campaign
+// overlay comes from siteSettings.donationConfig.campaignOverlay.
 
 interface Section {
   heading?: string;
@@ -25,7 +20,7 @@ interface Section {
 const props = defineProps<{ section?: Section | null }>();
 
 const site = useSiteStore();
-const { platform, donateHref, donateTarget, donateRel, handleDonateClick } = useDonateButton();
+const { donateHref, handleDonateClick } = useDonateButton();
 
 // Recurring is currently not toggled in this section — kept as a ref so a
 // future "monthly vs one-time" picker can flip it. When true, the campaign
@@ -39,9 +34,7 @@ const subheading = computed(
 
 // Resolved from the store (typed via the getter on useSiteStore).
 const campaign = computed(() => site.activeCampaignOverlay);
-const showCampaignOverlay = computed(
-  () => platform.value === 'stripe' && !!campaign.value && !isRecurring.value
-);
+const showCampaignOverlay = computed(() => !!campaign.value && !isRecurring.value);
 </script>
 
 <template>
@@ -52,48 +45,8 @@ const showCampaignOverlay = computed(
 
     <div class="one-time-gift__inner">
 
-      <!-- Colorado Gives — external redirect -->
-      <template v-if="platform === 'colorado-gives'">
-        <div class="one-time-gift__panel">
-          <p class="one-time-gift__copy">
-            Make a secure donation through {{ site.donationConfig?.campaignName || 'Colorado Gives' }} —
-            our current featured campaign.
-          </p>
-          <a
-            :href="donateHref"
-            :target="donateTarget"
-            :rel="donateRel"
-            class="btn-primary one-time-gift__cta"
-            @click="handleDonateClick"
-          >
-            Give on {{ site.donationConfig?.campaignName || 'Colorado Gives' }} →
-          </a>
-        </div>
-      </template>
-
-      <!-- Harness — opens widget modal, fallback to direct link -->
-      <template v-else-if="platform === 'harness'">
-        <div class="one-time-gift__panel">
-          <p class="one-time-gift__copy">{{ subheading }}</p>
-          <button type="button" class="btn-primary one-time-gift__cta" @click="handleDonateClick">
-            Give Now
-          </button>
-          <p class="one-time-gift__fallback">
-            Prefer a direct link?
-            <a
-              v-if="site.donationConfig?.harnessUrl"
-              :href="site.donationConfig.harnessUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Donate here →
-            </a>
-          </p>
-        </div>
-      </template>
-
-      <!-- Stripe with active campaign overlay — two-card layout -->
-      <template v-else-if="showCampaignOverlay && campaign">
+      <!-- Active campaign overlay — two-card layout -->
+      <template v-if="showCampaignOverlay && campaign">
         <div class="one-time-gift__campaign-options">
           <!-- Featured campaign card -->
           <a
@@ -124,27 +77,18 @@ const showCampaignOverlay = computed(
             <p class="one-time-gift__stripe-desc">
               Donate securely through The Joseph Center.
             </p>
-            <button type="button" class="btn-primary" @click="handleDonateClick">Give Now</button>
+            <a :href="donateHref" class="btn-primary" @click="handleDonateClick">Give Now</a>
           </div>
         </div>
       </template>
 
-      <!-- Stripe — no campaign overlay -->
-      <template v-else-if="platform === 'stripe'">
-        <div class="one-time-gift__panel">
-          <p class="one-time-gift__copy">
-            Make a secure donation directly through The Joseph Center.
-          </p>
-          <button type="button" class="btn-primary one-time-gift__cta" @click="handleDonateClick">
-            Give Now
-          </button>
-        </div>
-      </template>
-
-      <!-- Fallback when config hasn't loaded yet -->
+      <!-- No campaign overlay — the standard direct-giving panel -->
       <template v-else>
         <div class="one-time-gift__panel">
-          <p class="one-time-gift__copy">Donation options are loading…</p>
+          <p class="one-time-gift__copy">{{ subheading }}</p>
+          <a :href="donateHref" class="btn-primary one-time-gift__cta" @click="handleDonateClick">
+            Give Now
+          </a>
         </div>
       </template>
     </div>

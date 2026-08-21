@@ -151,8 +151,6 @@ export const handler: Handler = async (event) => {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  const provider = process.env.VITE_DONATION_PROVIDER || 'harness';
-  if (provider !== 'stripe') return jsonError(501, 'Stripe donations not yet activated.');
   if (event.httpMethod !== 'POST') return jsonError(405, 'Method not allowed');
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -322,13 +320,8 @@ export const handler: Handler = async (event) => {
     // never block the webhook response — Stripe shouldn't retry on AWeber
     // hiccups.
     //
-    // Note: this fires for every successful Stripe webhook regardless of the
-    // current siteSettings.donationConfig.activePlatform. That's intentional —
-    // if a Stripe charge succeeded, the platform was effectively Stripe at
-    // the moment of payment (subscription renewals from a prior Stripe period
-    // continue even after the active platform flips). The spec's "AWeber sync
-    // gated on stripe" intent is naturally enforced: Colorado Gives / Harness
-    // donations never reach this webhook.
+    // Fires for every successful Stripe webhook, including renewals of
+    // subscriptions created long before this code shipped.
     if (emailOptIn) {
       const aweberTags = [
         'stripe-donor',

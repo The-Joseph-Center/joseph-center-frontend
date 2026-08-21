@@ -23,8 +23,10 @@ const props = defineProps<{ section?: Section | null }>();
 
 const site = useSiteStore();
 
-const harnessUrl =
-  (import.meta.env.VITE_HARNESS_GIVING_URL as string | undefined) || '#';
+// Monthly tiers deep-link into our own donation flow with the frequency and
+// amount pre-selected, so "Subscribe $100/mo" lands on a form already set to
+// $100 monthly rather than the default.
+const monthlyGiftHref = (amount: number) => `/donate?frequency=monthly&amount=${amount}`;
 
 const heading = computed(() => props.section?.heading || 'Partner With Us');
 
@@ -35,7 +37,7 @@ const defaultTiers: Tier[] = [
     description: 'Support The Joseph Center with a monthly contribution.',
     price: 50,
     ctaLabel: 'Subscribe',
-    ctaHref: harnessUrl,
+    ctaHref: monthlyGiftHref(50),
   },
   {
     title: 'Monthly Partnership',
@@ -43,7 +45,7 @@ const defaultTiers: Tier[] = [
     description: 'Help fund a meaningful share of our daily operations every month.',
     price: 100,
     ctaLabel: 'Subscribe',
-    ctaHref: harnessUrl,
+    ctaHref: monthlyGiftHref(100),
   },
   {
     title: 'Monthly Partnership',
@@ -51,7 +53,7 @@ const defaultTiers: Tier[] = [
     description: 'Power major programs and outreach with a leadership-level commitment.',
     price: 250,
     ctaLabel: 'Subscribe',
-    ctaHref: harnessUrl,
+    ctaHref: monthlyGiftHref(250),
     featured: true,
   },
   {
