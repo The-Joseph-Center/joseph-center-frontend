@@ -10,13 +10,17 @@ interface Section {
 const props = defineProps<{ section?: Section | null }>();
 
 const hasVideo = computed(() => !!props.section?.videoId?.trim());
-const placeholderLabel = computed(
-  () => props.section?.placeholderLabel?.trim() || 'Video coming soon'
-);
+
+// The "coming soon" panel is opt-in: it shows only when an editor has actually
+// written a label. With no video and no label the whole section is hidden, so
+// clearing the videoId removes the block outright rather than leaving an empty
+// grey well on the page. Setting a videoId later brings it straight back.
+const placeholderLabel = computed(() => props.section?.placeholderLabel?.trim() || '');
+const showSection = computed(() => hasVideo.value || !!placeholderLabel.value);
 </script>
 
 <template>
-  <section class="video-section">
+  <section v-if="showSection" class="video-section">
     <div class="video-section__inner">
       <p v-if="section?.introText" class="video-section__intro">
         {{ section.introText }}

@@ -17,8 +17,11 @@ const props = defineProps<{ section?: Section }>();
 
 const title       = computed(() => props.section?.title ?? 'Our Story');
 const body        = computed(() => props.section?.body ?? 'We founded The Joseph Center in 2016 to build a community where everyone can thrive with dignity and purpose.');
-// TODO: replace placeholder video ID with Mona's intro video once it's confirmed
-const videoId     = computed(() => props.section?.videoId ?? 'dQw4w9WgXcQ');
+// No fallback video on purpose: an unset videoId renders the placeholder panel
+// rather than an arbitrary embed. (This previously defaulted to a well-known
+// joke video — harmless while every ourStorySection had a real id set, but one
+// unset field away from shipping on a nonprofit's homepage.)
+const videoId     = computed(() => props.section?.videoId?.trim() || '');
 const videoTitle  = computed(() => props.section?.videoTitle ?? 'The Joseph Center — Our Story');
 const ctaLabel    = computed(() => props.section?.ctaLabel ?? 'Read More');
 const ctaUrl      = computed(() => props.section?.ctaUrl ?? '/our-story');
@@ -27,8 +30,8 @@ const bandColor   = computed(() => props.section?.bandColor ?? 'gold');
 
 <template>
   <DiagonalSection :title="title" :color="bandColor">
-    <div class="our-story">
-      <div class="our-story__video">
+    <div class="our-story" :class="{ 'our-story--no-video': !videoId }">
+      <div v-if="videoId" class="our-story__video">
         <iframe
           :src="`https://www.youtube.com/embed/${videoId}`"
           :title="videoTitle"
@@ -53,6 +56,17 @@ const bandColor   = computed(() => props.section?.bandColor ?? 'gold');
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
+  align-items: center;
+}
+
+/* No video yet — collapse to a single centred column instead of leaving an
+   empty 16:9 well. Setting a videoId in Studio restores the two-up split. */
+.our-story--no-video {
+  grid-template-columns: 1fr;
+  max-width: 680px;
+  text-align: center;
+}
+.our-story--no-video .our-story__copy {
   align-items: center;
 }
 
