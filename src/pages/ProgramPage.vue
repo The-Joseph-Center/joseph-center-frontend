@@ -9,6 +9,7 @@ import HowYouCanHelp from '@/components/sections/HowYouCanHelp.vue';
 import ProgramTestimonialsSection from '@/components/sections/ProgramTestimonialsSection.vue';
 import CampaignProgressBar from '@/components/donate/CampaignProgressBar.vue';
 import ProgramCommunityResources from '@/components/sections/ProgramCommunityResources.vue';
+import ProgramStaffSection from '@/components/sections/ProgramStaffSection.vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import type { SanityImageSource } from '@/types/site';
 
@@ -288,6 +289,14 @@ function ctaClass(variant?: InlineCta['variant']) {
       <ProgramCommunityResources
         v-if="program.slug?.current"
         :key="program.slug.current"
+        :program-slug="program.slug.current"
+      />
+
+      <!-- 8. Meet the Team — staff whose department maps to this program.
+           Renders nothing for programs with no mapped department or no
+           assigned staff. -->
+      <ProgramStaffSection
+        v-if="program.slug?.current"
         :program-slug="program.slug.current"
       />
     </template>

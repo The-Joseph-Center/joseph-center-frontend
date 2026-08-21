@@ -29,7 +29,9 @@ const showContact = computed(() => props.section?.showContact !== false);
 
 // useSanity fires once on mount. The two pages (/staff, /board) are separate
 // mounts of this component, so a single query per mount is enough.
-const query = `*[_type == $source] | order(name asc){
+// `hidden != true` also matches documents with no `hidden` field at all, so
+// existing people stay visible without needing a backfill.
+const query = `*[_type == $source && hidden != true] | order(name asc){
   _id, name, title, email, image, source, quote, isAdvisoryBoard
 }`;
 
