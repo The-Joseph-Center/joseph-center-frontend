@@ -41,8 +41,11 @@ const props = withDefaults(
     editMode?: 'off' | 'partial' | 'full';
     draft?: StaffDraft | null;
     departmentOptions?: { value: string; label: string }[];
+    // Off when the cards already sit under an "Advisory Board" heading, which
+    // would otherwise repeat the same words on every card in the section.
+    showAdvisoryLabel?: boolean;
   }>(),
-  { editMode: 'off', draft: null, departmentOptions: () => [] }
+  { editMode: 'off', draft: null, departmentOptions: () => [], showAdvisoryLabel: true }
 );
 
 const editing = computed(() => props.editMode !== 'off' && !!props.draft);
@@ -168,7 +171,7 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
       </SmartLink>
 
       <!-- Advisory board label (board members only) -->
-      <span v-if="person.isAdvisoryBoard" class="person-card__advisory">
+      <span v-if="person.isAdvisoryBoard && showAdvisoryLabel" class="person-card__advisory">
         Advisory Board Member
       </span>
     </div>

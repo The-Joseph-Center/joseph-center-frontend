@@ -62,6 +62,12 @@ const orderedPeople = computed(() =>
   )
 );
 
+// Advisory members get their own grid below the main board. Left in the same
+// grid they ended up beside a full-height card, which read as a gap rather than
+// as a separate, smaller group.
+const mainPeople = computed(() => orderedPeople.value.filter((p) => !p.isAdvisoryBoard));
+const advisoryPeople = computed(() => orderedPeople.value.filter((p) => !!p.isAdvisoryBoard));
+
 interface Group {
   key: string;
   label: string;
@@ -283,18 +289,39 @@ async function submitIntake() {
       <!-- Flat grid (board, or grouping switched off).
            NOTE: this v-else belongs to `v-else-if="grouped"` above. Do not put
            another v-if between the two — it steals the v-else and the page
-           renders every card twice. -->
-      <div v-else class="people-grid__grid">
-        <PersonCard
-          v-for="person in orderedPeople"
-          :key="person._id"
-          :person="person"
-          :show-contact="showContact"
-          :edit-mode="editModeFor(person._id)"
-          :draft="drafts[person._id] ?? null"
-          :department-options="departmentOptions"
-        />
-      </div>
+           renders every card twice. Everything for this branch stays inside
+           the template below for that reason. -->
+      <template v-else>
+        <div class="people-grid__grid">
+          <PersonCard
+            v-for="person in mainPeople"
+            :key="person._id"
+            :person="person"
+            :show-contact="showContact"
+            :edit-mode="editModeFor(person._id)"
+            :draft="drafts[person._id] ?? null"
+            :department-options="departmentOptions"
+          />
+        </div>
+
+        <!-- Advisory board — its own heading and grid below the main board -->
+        <section v-if="advisoryPeople.length" class="people-grid__advisory">
+          <h2 class="people-grid__dept-title">Advisory Board</h2>
+          <hr class="people-grid__rule" />
+          <div class="people-grid__grid">
+            <PersonCard
+              v-for="person in advisoryPeople"
+              :key="person._id"
+              :person="person"
+              :show-contact="showContact"
+              :show-advisory-label="false"
+              :edit-mode="editModeFor(person._id)"
+              :draft="drafts[person._id] ?? null"
+              :department-options="departmentOptions"
+            />
+          </div>
+        </section>
+      </template>
       <!-- TEMPORARY — confirmation, shown in place of the sticky bar -->
       <div v-if="intake && submitted" class="intake-bar intake-bar--done" role="status">
         <p><strong>Thank you — that’s been sent.</strong> Your changes are on their way for review.</p>
@@ -439,6 +466,10 @@ async function submitIntake() {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 0 0 0.75rem;
+}
+
+.people-grid__advisory {
+  margin-top: 3.5rem;
 }
 
 .people-grid__rule {
