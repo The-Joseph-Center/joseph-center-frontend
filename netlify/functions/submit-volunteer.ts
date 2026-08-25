@@ -109,17 +109,24 @@ export const handler: Handler = async (event) => {
       ? JSON.stringify(extras)
       : null;
 
-    await turso.execute({
-      sql: `INSERT INTO volunteer_submissions
-            (name, email, phone, departments, availability, additional_info)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [
-        name, email, phone || null,
-        departments ? JSON.stringify(departments) : null,
-        availability ? JSON.stringify(availability) : null,
-        additionalInfoValue,
-      ],
-    });
+    // Persistence must not cost us the notification. Staff act on the email,
+    // not the database, so a write failure is logged and the send continues —
+    // the volunteer application is still recoverable from the email itself.
+    try {
+      await turso.execute({
+        sql: `INSERT INTO volunteer_submissions
+              (name, email, phone, departments, availability, additional_info)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [
+          name, email, phone || null,
+          departments ? JSON.stringify(departments) : null,
+          availability ? JSON.stringify(availability) : null,
+          additionalInfoValue,
+        ],
+      });
+    } catch (dbErr) {
+      console.error('submit-volunteer: failed to persist the volunteer application:', dbErr);
+    }
 
     const safeFirstName = (firstName || name.split(' ')[0] || '').toString();
     const safeLastName = (lastName || name.split(' ').slice(1).join(' ') || '').toString();

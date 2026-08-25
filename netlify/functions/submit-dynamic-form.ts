@@ -71,10 +71,17 @@ export const handler: Handler = async (event) => {
     }
 
     // Persist to Turso
-    await turso.execute({
-      sql: 'INSERT INTO form_submissions (form_slug, data, email) VALUES (?, ?, ?)',
-      args: [slug, JSON.stringify(data), data.email || null],
-    });
+    // Persistence must not cost us the notification. Staff act on the email,
+    // not the database, so a write failure is logged and the send continues —
+    // the form submission is still recoverable from the email itself.
+    try {
+      await turso.execute({
+        sql: 'INSERT INTO form_submissions (form_slug, data, email) VALUES (?, ?, ?)',
+        args: [slug, JSON.stringify(data), data.email || null],
+      });
+    } catch (dbErr) {
+      console.error('submit-dynamic-form: failed to persist the form submission:', dbErr);
+    }
 
     // Notify staff
     if (form.notifyEmail) {

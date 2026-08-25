@@ -68,15 +68,22 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    await turso.execute({
-      sql: `INSERT INTO event_registrations
-            (event_slug, first_name, last_name, email, phone, party_size, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        eventSlug, firstName, lastName, email,
-        phone || null, partySize || 1, notes || null,
-      ],
-    });
+    // Persistence must not cost us the notification. Staff act on the email,
+    // not the database, so a write failure is logged and the send continues —
+    // the event registration is still recoverable from the email itself.
+    try {
+      await turso.execute({
+        sql: `INSERT INTO event_registrations
+              (event_slug, first_name, last_name, email, phone, party_size, notes)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          eventSlug, firstName, lastName, email,
+          phone || null, partySize || 1, notes || null,
+        ],
+      });
+    } catch (dbErr) {
+      console.error('submit-event-registration: failed to persist the event registration:', dbErr);
+    }
 
     // Confirmation
     await resend.emails.send({

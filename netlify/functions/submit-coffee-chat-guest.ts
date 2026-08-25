@@ -64,38 +64,45 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    await turso.execute({
-      sql: `INSERT INTO coffee_chat_applications (
-              email, full_name, contact_email, phone, connection, is_18_plus,
-              impact_statement, programs_involved, has_legal_matters, sensitive_topics,
-              comfortable_recorded, name_display, accommodations, media_release_granted,
-              expectations_confirmed, best_days, best_times, contact_methods,
-              additional_info, signature, signature_date
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      args: [
-        body.email,
-        body.fullName,
-        body.contactEmail ?? null,
-        body.phone ?? null,
-        body.connection,
-        body.is18Plus ? 1 : 0,
-        body.impactStatement,
-        JSON.stringify(body.programsInvolved ?? []),
-        body.hasLegalMatters ? 1 : 0,
-        body.sensitiveTopics ?? null,
-        body.comfortableRecorded ? 1 : 0,
-        body.nameDisplay,
-        body.accommodations ?? null,
-        body.mediaReleaseGranted ? 1 : 0,
-        body.expectationsConfirmed ? 1 : 0,
-        JSON.stringify(body.bestDays ?? []),
-        JSON.stringify(body.bestTimes ?? []),
-        JSON.stringify(body.contactMethods ?? []),
-        body.additionalInfo ?? null,
-        body.signature,
-        body.signatureDate,
-      ],
-    });
+    // Persistence must not cost us the notification. Staff act on the email,
+    // not the database, so a write failure is logged and the send continues —
+    // the coffee chat application is still recoverable from the email itself.
+    try {
+      await turso.execute({
+        sql: `INSERT INTO coffee_chat_applications (
+                email, full_name, contact_email, phone, connection, is_18_plus,
+                impact_statement, programs_involved, has_legal_matters, sensitive_topics,
+                comfortable_recorded, name_display, accommodations, media_release_granted,
+                expectations_confirmed, best_days, best_times, contact_methods,
+                additional_info, signature, signature_date
+              ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [
+          body.email,
+          body.fullName,
+          body.contactEmail ?? null,
+          body.phone ?? null,
+          body.connection,
+          body.is18Plus ? 1 : 0,
+          body.impactStatement,
+          JSON.stringify(body.programsInvolved ?? []),
+          body.hasLegalMatters ? 1 : 0,
+          body.sensitiveTopics ?? null,
+          body.comfortableRecorded ? 1 : 0,
+          body.nameDisplay,
+          body.accommodations ?? null,
+          body.mediaReleaseGranted ? 1 : 0,
+          body.expectationsConfirmed ? 1 : 0,
+          JSON.stringify(body.bestDays ?? []),
+          JSON.stringify(body.bestTimes ?? []),
+          JSON.stringify(body.contactMethods ?? []),
+          body.additionalInfo ?? null,
+          body.signature,
+          body.signatureDate,
+        ],
+      });
+    } catch (dbErr) {
+      console.error('submit-coffee-chat-guest: failed to persist the coffee chat application:', dbErr);
+    }
 
     if (process.env.CONTACT_TO_EMAIL) {
       await resend.emails.send({
