@@ -23,6 +23,8 @@ import VideoSection from '@/components/sections/VideoSection.vue'
 import DualCtaSection from '@/components/sections/DualCtaSection.vue'
 import DiagonalTextSection from '@/components/sections/DiagonalTextSection.vue'
 import PeopleGrid from '@/components/sections/PeopleGrid.vue'
+// TEMPORARY — internal staff intake tool; remove with the section it renders.
+import StaffIntakeSection from '@/components/sections/StaffIntakeSection.vue'
 import VideoGridSection from '@/components/sections/VideoGridSection.vue'
 import EventsListSection from '@/components/sections/EventsListSection.vue'
 import TransparencySection from '@/components/sections/TransparencySection.vue'
@@ -66,6 +68,7 @@ export const sectionMap: Record<string, Component> = {
   diagonalTextSection: DiagonalTextSection,
   // Staff & Board pages (12) section
   peopleGrid: PeopleGrid,
+  staffIntakeSection: StaffIntakeSection,
   // Testimonies page (13) section
   videoGridSection: VideoGridSection,
   // Events page (14) section
