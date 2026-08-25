@@ -53,6 +53,15 @@ const { data: people, loading } = useSanity<Person[]>(query, {
   source: sourceType.value,
 });
 
+// Advisory board members sit after the full board. Stable sort, so the
+// alphabetical order from the query is preserved within each block. A no-op for
+// staff, who carry no such flag.
+const orderedPeople = computed(() =>
+  [...(people.value ?? [])].sort(
+    (a, b) => Number(!!a.isAdvisoryBoard) - Number(!!b.isAdvisoryBoard)
+  )
+);
+
 interface Group {
   key: string;
   label: string;
@@ -72,7 +81,7 @@ interface Group {
 // Someone assigned to several departments appears under each of them, which is
 // what a multi-select implies; the trailing group catches anyone left over.
 const groups = computed<Group[]>(() => {
-  const list = people.value ?? [];
+  const list = orderedPeople.value;
   if (!grouped.value || !list.length) return [];
 
   const out: Group[] = [];
@@ -277,7 +286,7 @@ async function submitIntake() {
            renders every card twice. -->
       <div v-else class="people-grid__grid">
         <PersonCard
-          v-for="person in people"
+          v-for="person in orderedPeople"
           :key="person._id"
           :person="person"
           :show-contact="showContact"
@@ -442,6 +451,10 @@ async function submitIntake() {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  /* Cards size to their own content. Without this a photoless card would still
+     stretch to match the tallest in its row, so collapsing the photo would just
+     move the empty space below the text instead of removing it. */
+  align-items: start;
 }
 
 @media (min-width: 768px) {

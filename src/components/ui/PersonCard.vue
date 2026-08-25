@@ -62,6 +62,12 @@ const photoUrl = computed(() => {
 const imageBroken = ref(false);
 const showImage = computed(() => !!photoUrl.value && !imageBroken.value);
 
+// No photo at all → drop the square entirely so the card collapses to its text
+// rather than showing a large empty panel. A photo that is set but fails to
+// load still falls back to the initial placeholder, so a genuine broken asset
+// stays visible as a problem instead of quietly disappearing.
+const hasPhoto = computed(() => !!photoUrl.value);
+
 const contactHref = computed(() => {
   if (props.showContact === false) return null;
   const e = props.person.email?.trim();
@@ -73,7 +79,7 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
 
 <template>
   <div class="person-card">
-    <div class="person-card__photo-wrap">
+    <div v-if="hasPhoto" class="person-card__photo-wrap">
       <img
         v-if="showImage"
         :src="photoUrl!"
