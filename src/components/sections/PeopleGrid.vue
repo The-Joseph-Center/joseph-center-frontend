@@ -271,12 +271,10 @@ async function submitIntake() {
         </section>
       </template>
 
-      <!-- TEMPORARY — submit bar -->
-      <div v-if="intake && submitted" class="intake-bar intake-bar--done" role="status">
-        <p><strong>Thank you — that’s been sent.</strong> Your changes are on their way for review.</p>
-      </div>
-
-      <!-- Flat grid (board, or grouping switched off) -->
+      <!-- Flat grid (board, or grouping switched off).
+           NOTE: this v-else belongs to `v-else-if="grouped"` above. Do not put
+           another v-if between the two — it steals the v-else and the page
+           renders every card twice. -->
       <div v-else class="people-grid__grid">
         <PersonCard
           v-for="person in people"
@@ -288,6 +286,11 @@ async function submitIntake() {
           :department-options="departmentOptions"
         />
       </div>
+      <!-- TEMPORARY — confirmation, shown in place of the sticky bar -->
+      <div v-if="intake && submitted" class="intake-bar intake-bar--done" role="status">
+        <p><strong>Thank you — that’s been sent.</strong> Your changes are on their way for review.</p>
+      </div>
+
       <!-- TEMPORARY — sticky submit bar -->
       <div v-if="intake && !submitted && !loading" class="intake-bar">
         <div class="intake-bar__inner">
