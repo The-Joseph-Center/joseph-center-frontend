@@ -93,8 +93,12 @@ const donorIntroParagraphs = computed(() => {
   border-top: 1px solid var(--color-border);
 }
 
+/* Matches the 780px centred column every other section on the program page
+   uses (vision, how-we-help, campaigns). At 1200px this block started 210px
+   further left than the sections above it, which read as the section being
+   shifted rather than as a deliberately wider one. */
 .how-you-can-help__inner {
-  max-width: 1200px;
+  max-width: 780px;
   margin: 0 auto;
 }
 
@@ -107,7 +111,6 @@ const donorIntroParagraphs = computed(() => {
 }
 
 .how-you-can-help__body {
-  max-width: 680px;
   margin-bottom: 2.5rem;
 }
 
