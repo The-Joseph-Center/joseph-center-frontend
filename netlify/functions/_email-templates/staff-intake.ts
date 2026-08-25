@@ -1,145 +1,126 @@
 import {
   RenderedEmail, renderShell, wrapText, h1, p, summaryTable, BRAND, escapeHtml,
 } from './shared';
-// Same module the site and Studio use, so the email names departments exactly
-// as the dropdown does — these get keyed straight into Sanity.
-import { departmentLabel } from '../../../src/lib/departments';
 
-// TEMPORARY — companion to the staff intake tool on /staff. Delete this file
-// together with submit-staff-intake.ts and StaffIntakeSection.vue once the
-// submissions are in and the details have been entered into Sanity.
+// TEMPORARY — companion to the inline staff intake editing on /staff. Delete
+// with submit-staff-intake.ts and the intakeMode flag once the answers are in.
 
-export interface IntakeIdentification {
-  designation: string;      // stable code shown beside the photo, e.g. IMG-02302D
-  imageUrl: string;
-  filename?: string | null;
-  assetId: string;
-  name?: string | null;
-  title?: string | null;
-  departments?: string[];
-  quote?: string | null;
-}
-
-export interface IntakeCorrection {
-  name: string;             // read-only on the form — identifies the person
+export interface StaffEdit {
   staffId: string;
+  currentName: string;
+  imageUrl?: string | null;
+  kind: 'identification' | 'correction';
+  nameBefore?: string | null;
+  nameAfter?: string | null;
   titleBefore?: string | null;
   titleAfter?: string | null;
-  departmentsBefore?: string[];
-  departmentsAfter?: string[];
+  departmentBefore?: string | null;
+  departmentAfter?: string | null;
+  emailBefore?: string | null;
+  emailAfter?: string | null;
 }
 
 export interface StaffIntakeVars {
   submittedBy?: string | null;
-  identifications: IntakeIdentification[];
-  corrections: IntakeCorrection[];
+  edits: StaffEdit[];
 }
 
 const dash = (v?: string | null) => (v && v.trim() ? v.trim() : '—');
-const list = (v?: string[]) => (v && v.length ? v.map(departmentLabel).join(', ') : '—');
+const changed = (a?: string | null, b?: string | null) => dash(a) !== dash(b);
 
-function identificationBlock(item: IntakeIdentification): string {
-  // The thumbnail is inlined so the photo and its answers stay together — the
-  // whole point is being able to match one to the other without cross-checking
-  // a separate list.
-  const thumb = `
-${p(`<img src="${escapeHtml(item.imageUrl)}?w=260&h=260&fit=crop&auto=format" width="130" height="130" alt="${escapeHtml(item.designation)}" style="display:block;border-radius:6px;border:1px solid #e7e1d3;">`)}`;
+function editBlock(e: StaffEdit): string {
+  // The photo travels with the answers — for the placeholder cards it is the
+  // only way to confirm the right person was identified.
+  const thumb = e.imageUrl
+    ? p(
+        `<img src="${escapeHtml(e.imageUrl)}?w=220&h=220&fit=crop&auto=format" width="110" height="110" ` +
+          `alt="${escapeHtml(e.currentName)}" style="display:block;border-radius:6px;border:1px solid #e7e1d3;">`
+      )
+    : '';
 
-  return `
-${p(`<strong style="font-family:monospace;font-size:15px;color:${BRAND.primary};">${escapeHtml(item.designation)}</strong>`)}
-${thumb}
-${summaryTable([
-  { label: 'Name', value: dash(item.name) },
-  { label: 'Title', value: dash(item.title) },
-  { label: 'Department(s)', value: list(item.departments) },
-  { label: 'Quote', value: dash(item.quote) },
-  { label: 'File', value: dash(item.filename) },
-  { label: 'Asset ID', value: item.assetId },
-])}
-`;
-}
+  const rows: { label: string; value: string }[] = [];
 
-function correctionBlock(item: IntakeCorrection): string {
-  const titleChanged = dash(item.titleBefore) !== dash(item.titleAfter);
-  const deptChanged = list(item.departmentsBefore) !== list(item.departmentsAfter);
-
-  const rows = [{ label: 'Staff member', value: item.name }];
-  if (titleChanged) {
-    rows.push({ label: 'Title — was', value: dash(item.titleBefore) });
-    rows.push({ label: 'Title — now', value: dash(item.titleAfter) });
+  if (e.kind === 'identification') {
+    rows.push({ label: 'Card', value: e.currentName });
+    rows.push({ label: 'Name', value: dash(e.nameAfter) });
+    rows.push({ label: 'Title', value: dash(e.titleAfter) });
+    rows.push({ label: 'Department', value: dash(e.departmentAfter) });
+    rows.push({ label: 'Email', value: dash(e.emailAfter) });
+  } else {
+    rows.push({ label: 'Staff member', value: e.currentName });
+    if (changed(e.titleBefore, e.titleAfter)) {
+      rows.push({ label: 'Title — was', value: dash(e.titleBefore) });
+      rows.push({ label: 'Title — now', value: dash(e.titleAfter) });
+    }
+    if (changed(e.departmentBefore, e.departmentAfter)) {
+      rows.push({ label: 'Department — was', value: dash(e.departmentBefore) });
+      rows.push({ label: 'Department — now', value: dash(e.departmentAfter) });
+    }
   }
-  if (deptChanged) {
-    rows.push({ label: 'Department — was', value: list(item.departmentsBefore) });
-    rows.push({ label: 'Department — now', value: list(item.departmentsAfter) });
-  }
-  rows.push({ label: 'Document ID', value: item.staffId });
 
-  return summaryTable(rows);
+  rows.push({ label: 'Document ID', value: e.staffId });
+  return `${thumb}${summaryTable(rows)}`;
 }
 
 export function staffIntake(v: StaffIntakeVars): RenderedEmail {
-  const idCount = v.identifications.length;
-  const corrCount = v.corrections.length;
+  const ids = v.edits.filter((e) => e.kind === 'identification');
+  const corr = v.edits.filter((e) => e.kind === 'correction');
 
-  const parts: string[] = [h1('Staff intake submission')];
-
+  const parts: string[] = [h1('Staff page edits')];
   parts.push(
     p(
-      `${idCount} photo${idCount === 1 ? '' : 's'} identified · ` +
-        `${corrCount} existing record${corrCount === 1 ? '' : 's'} changed` +
+      `${ids.length} card${ids.length === 1 ? '' : 's'} identified · ` +
+        `${corr.length} detail${corr.length === 1 ? '' : 's'} corrected` +
         (v.submittedBy ? ` · submitted by ${escapeHtml(v.submittedBy)}` : '')
     )
   );
 
-  if (idCount) {
-    parts.push(p('<strong>Photo identifications</strong>'));
-    parts.push(...v.identifications.map(identificationBlock));
+  if (ids.length) {
+    parts.push(p('<strong>Identified from the unnamed cards</strong>'));
+    parts.push(...ids.map(editBlock));
+  }
+  if (corr.length) {
+    parts.push(p('<strong>Corrections to existing staff</strong>'));
+    parts.push(...corr.map(editBlock));
   }
 
-  if (corrCount) {
-    parts.push(p('<strong>Changes to existing staff</strong>'));
-    parts.push(...v.corrections.map(correctionBlock));
-  }
-
-  const textLines = [
-    'STAFF INTAKE SUBMISSION',
-    `${idCount} photo(s) identified, ${corrCount} existing record(s) changed`,
+  const lines: string[] = [
+    'STAFF PAGE EDITS',
+    `${ids.length} card(s) identified, ${corr.length} detail(s) corrected`,
     v.submittedBy ? `Submitted by: ${v.submittedBy}` : '',
     '',
   ];
-
-  for (const i of v.identifications) {
-    textLines.push(
-      `[${i.designation}]`,
-      `  Name:        ${dash(i.name)}`,
-      `  Title:       ${dash(i.title)}`,
-      `  Department:  ${list(i.departments)}`,
-      `  Quote:       ${dash(i.quote)}`,
-      `  File:        ${dash(i.filename)}`,
-      `  Image:       ${i.imageUrl}`,
-      `  Asset ID:    ${i.assetId}`,
+  for (const e of ids) {
+    lines.push(
+      `[${e.currentName}]  (identified)`,
+      `  Name:        ${dash(e.nameAfter)}`,
+      `  Title:       ${dash(e.titleAfter)}`,
+      `  Department:  ${dash(e.departmentAfter)}`,
+      `  Email:       ${dash(e.emailAfter)}`,
+      `  Photo:       ${e.imageUrl ?? '—'}`,
+      `  Document ID: ${e.staffId}`,
       ''
     );
   }
-
-  for (const c of v.corrections) {
-    textLines.push(
-      `[${c.name}]`,
-      `  Title:       ${dash(c.titleBefore)}  ->  ${dash(c.titleAfter)}`,
-      `  Department:  ${list(c.departmentsBefore)}  ->  ${list(c.departmentsAfter)}`,
-      `  Document ID: ${c.staffId}`,
-      ''
-    );
+  for (const e of corr) {
+    lines.push(`[${e.currentName}]`);
+    if (changed(e.titleBefore, e.titleAfter)) {
+      lines.push(`  Title:       ${dash(e.titleBefore)}  ->  ${dash(e.titleAfter)}`);
+    }
+    if (changed(e.departmentBefore, e.departmentAfter)) {
+      lines.push(`  Department:  ${dash(e.departmentBefore)}  ->  ${dash(e.departmentAfter)}`);
+    }
+    lines.push(`  Document ID: ${e.staffId}`, '');
   }
 
   return {
-    subject: `Staff intake — ${idCount} photo${idCount === 1 ? '' : 's'} identified, ${corrCount} change${corrCount === 1 ? '' : 's'}`,
+    subject: `Staff page edits — ${ids.length} identified, ${corr.length} corrected`,
     html: renderShell({
-      previewText: `${idCount} identified, ${corrCount} changed`,
+      previewText: `${ids.length} identified, ${corr.length} corrected`,
       bannerColor: BRAND.accent,
-      bannerLabel: 'Staff intake',
+      bannerLabel: 'Staff page edits',
       bodyHtml: parts.join('\n'),
     }),
-    text: wrapText(textLines.filter((l) => l !== undefined).join('\n')),
+    text: wrapText(lines.join('\n')),
   };
 }

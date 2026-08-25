@@ -15,10 +15,38 @@ interface Person {
   isAdvisoryBoard?: boolean;
 }
 
-const props = defineProps<{
-  person: Person;
-  showContact?: boolean;
-}>();
+// ── TEMPORARY: inline edit mode ──────────────────────────────────────────
+// Lets a manager correct a card in place on /staff rather than hunting for a
+// matching row in a separate form. Off by default, so the live card renders
+// exactly as it always has.
+//   'partial' — title + department only (named staff, where those are the
+//               questionable fields)
+//   'full'    — also name and email (the joseph_N placeholder cards, which
+//               need identifying outright)
+// The parent owns the draft object and mutates it directly; this component
+// only renders the inputs. Delete this block, the `draft`/`editMode` props and
+// the .person-card--editing styles when the intake is done.
+export interface StaffDraft {
+  name: string;
+  title: string;
+  department: string;
+  departmentOther: string;
+  email: string;
+}
+
+const props = withDefaults(
+  defineProps<{
+    person: Person;
+    showContact?: boolean;
+    editMode?: 'off' | 'partial' | 'full';
+    draft?: StaffDraft | null;
+    departmentOptions?: { value: string; label: string }[];
+  }>(),
+  { editMode: 'off', draft: null, departmentOptions: () => [] }
+);
+
+const editing = computed(() => props.editMode !== 'off' && !!props.draft);
+const editingFull = computed(() => editing.value && props.editMode === 'full');
 
 const photoUrl = computed(() => {
   if (!props.person.image) return null;
@@ -60,11 +88,67 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
     </div>
 
     <div class="person-card__banner">
-      <p class="person-card__name">{{ person.name || 'Unnamed' }}</p>
-      <p v-if="person.title" class="person-card__role">{{ person.title }}</p>
+      <!-- Editing: the name sits where the name always sits -->
+      <template v-if="editing">
+        <input
+          v-if="editingFull"
+          v-model="draft!.name"
+          type="text"
+          class="pc-edit__input pc-edit__input--name"
+          aria-label="Name"
+          placeholder="Name"
+        />
+        <p v-else class="person-card__name">{{ person.name || 'Unnamed' }}</p>
+
+        <input
+          v-model="draft!.title"
+          type="text"
+          class="pc-edit__input"
+          aria-label="Title"
+          placeholder="Title"
+        />
+      </template>
+
+      <template v-else>
+        <p class="person-card__name">{{ person.name || 'Unnamed' }}</p>
+        <p v-if="person.title" class="person-card__role">{{ person.title }}</p>
+      </template>
     </div>
 
-    <div class="person-card__bottom">
+    <!-- Editing: department (+ email on the placeholder cards) fill the space
+         a quote or contact link would otherwise occupy -->
+    <div v-if="editing" class="person-card__bottom pc-edit">
+      <label class="pc-edit__field">
+        <span class="pc-edit__label">Department</span>
+        <select v-model="draft!.department" class="pc-edit__input">
+          <option value="">Select…</option>
+          <option v-for="d in departmentOptions" :key="d.value" :value="d.value">{{ d.label }}</option>
+          <option value="__other">Other…</option>
+        </select>
+      </label>
+
+      <input
+        v-if="draft!.department === '__other'"
+        v-model="draft!.departmentOther"
+        type="text"
+        class="pc-edit__input"
+        aria-label="Other department"
+        placeholder="Type the department"
+      />
+
+      <label v-if="editingFull" class="pc-edit__field">
+        <span class="pc-edit__label">Email</span>
+        <input
+          v-model="draft!.email"
+          type="email"
+          class="pc-edit__input"
+          autocomplete="off"
+          placeholder="name@josephcentergj.com"
+        />
+      </label>
+    </div>
+
+    <div v-else class="person-card__bottom">
       <!-- Quote takes precedence over the contact link when set -->
       <p v-if="person.quote" class="person-card__quote">
         &ldquo;{{ person.quote }}&rdquo;
@@ -94,6 +178,45 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
   background: white;
   box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.08));
   transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+/* ── TEMPORARY: inline edit mode ── */
+.pc-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.pc-edit__field { display: block; }
+.pc-edit__label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.15rem;
+}
+.pc-edit__input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-border, #e0d8c5);
+  border-radius: 0.3rem;
+}
+.pc-edit__input--name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.pc-edit__input:focus {
+  outline: 2px solid var(--jc-deep-green);
+  outline-offset: 1px;
+  border-color: transparent;
 }
 
 .person-card:hover {
