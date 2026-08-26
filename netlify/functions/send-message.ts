@@ -3,8 +3,12 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const TO_EMAIL = process.env.CONTACT_TO_EMAIL || 'mhighline@josephcentergj.com';
-const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev';
+const TO_EMAIL = process.env.CONTACT_TO_EMAIL || 'jc@josephcentergj.com';
+const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || 'no-reply@josephcentergj.com';
+// Was left as the literal scaffold placeholder ##CLIENT_DOMAIN##, which shipped
+// straight into the subject line of every contact email.
+const SITE_DOMAIN = process.env.VITE_SITE_URL?.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  || 'josephcentergj.com';
 
 export default async (req: Request, _context: Context) => {
   // Only allow POST
@@ -38,7 +42,7 @@ export default async (req: Request, _context: Context) => {
       from: FROM_EMAIL,
       to: TO_EMAIL,
       replyTo: email,
-      subject: `New message from ${name} via ##CLIENT_DOMAIN##`,
+      subject: `New message from ${name} via ${SITE_DOMAIN}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #0e7490; margin-bottom: 24px;">New Contact Form Submission</h2>
@@ -57,7 +61,7 @@ export default async (req: Request, _context: Context) => {
             </tr>
           </table>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-          <p style="font-size: 12px; color: #9ca3af;">Sent from the contact form on ##CLIENT_DOMAIN##</p>
+          <p style="font-size: 12px; color: #9ca3af;">Sent from the contact form on ${SITE_DOMAIN}</p>
         </div>
       `,
     });
