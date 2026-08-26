@@ -8,7 +8,7 @@ import SmartLink from '@/components/ui/SmartLink.vue';
 const site = useSiteStore();
 const route = useRoute();
 
-const navItems = computed(() => site.headerNav || []);
+const navItems = computed(() => site.headerNavResolved || []);
 const volunteerUrl = computed(() => site.volunteerUrl || site.ctaUrl || '/forms/volunteer');
 const logoSrc = computed(() =>
   site.logo

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { SiteConfig, CampaignOverlay } from '@/types/site';
+import type { SiteConfig, CampaignOverlay, HeaderNavItem } from '@/types/site';
 
 export const useSiteStore = defineStore('site', {
   state: (): SiteConfig => ({
@@ -77,8 +77,14 @@ export const useSiteStore = defineStore('site', {
       { label: 'Resources', href: '/resources' },
       { label: 'Blog', href: '/blog' },
       {
+        // NOTE: this list is the one the header actually renders. The Sanity
+        // `navigation` doc with navType 'main' populates `primaryNav`, which no
+        // header reads — editing the main nav in Studio has no visible effect.
         label: 'Partner With Us',
         children: [
+          { label: 'Donate', href: '/donate' },
+          // Donor Portal is injected by the headerNavResolved getter when the
+          // URL is configured, so it cannot appear as a dead link.
           { label: 'Events', href: '/events' },
           { label: 'Transparency', href: '/transparency' },
         ],
@@ -98,6 +104,31 @@ export const useSiteStore = defineStore('site', {
       if (overlay.startsAt && now < new Date(overlay.startsAt)) return null;
       if (overlay.expiresAt && now > new Date(overlay.expiresAt)) return null;
       return overlay;
+    },
+    /**
+     * headerNav with the Donor Portal slotted under "Partner With Us".
+     *
+     * Injected rather than hardcoded because the URL lives in Sanity
+     * (donationConfig.donorPortalUrl) and is blank until an admin sets it —
+     * a static entry would render a dead link in the meantime.
+     */
+    headerNavResolved(): HeaderNavItem[] {
+      const portal = this.donationConfig?.donorPortalUrl?.trim();
+      if (!portal) return this.headerNav ?? [];
+      return (this.headerNav ?? []).map((item) => {
+        if (item.label !== 'Partner With Us' || !item.children) return item;
+        if (item.children.some((c) => c.label === 'Donor Portal')) return item;
+        const children = [...item.children];
+        // Directly after Donate: both are about giving, and someone looking for
+        // one is often looking for the other.
+        const at = children.findIndex((c) => c.label === 'Donate');
+        children.splice(at === -1 ? 0 : at + 1, 0, {
+          label: 'Donor Portal',
+          href: portal,
+          isExternal: true,
+        });
+        return { ...item, children };
+      });
     },
     // Every Give button routes to the on-site flow. Kept as a getter so the
     // path stays defined in exactly one place.

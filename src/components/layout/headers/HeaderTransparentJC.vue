@@ -5,10 +5,8 @@ import { sanityImage } from '@/composables/useSanityImage';
 
 const site = useSiteStore();
 
-const navItems = computed(() => site.headerNav || []);
-// Stripe Customer Portal — only rendered once the URL is configured in Studio,
-// so the menu never shows a dead "Donor Portal" link.
-const donorPortalUrl = computed(() => site.donorPortalUrl);
+// Resolved, so the Donor Portal appears under Partner With Us once its URL is set.
+const navItems = computed(() => site.headerNavResolved || []);
 const volunteerUrl = computed(() => site.volunteerUrl || site.ctaUrl || '/forms/volunteer');
 const logoSrc = computed(() =>
   site.logo
@@ -139,22 +137,14 @@ onBeforeUnmount(() => {
                 v-for="child in item.children"
                 :key="child.label"
                 :href="child.href"
+                :target="child.isExternal ? '_blank' : undefined"
+                :rel="child.isExternal ? 'noopener noreferrer' : undefined"
                 @click="closeMenu"
               >{{ child.label }}</a>
             </li>
           </template>
         </template>
 
-        <!-- Existing monthly donors — Stripe-hosted portal, opens in a new tab
-             since it's an outside sign-in flow. -->
-        <li v-if="donorPortalUrl" class="jc-menu__utility">
-          <a
-            :href="donorPortalUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            @click="closeMenu"
-          >Donor Portal</a>
-        </li>
       </ul>
 
     </nav>
@@ -454,21 +444,6 @@ onBeforeUnmount(() => {
   border: none;
   border-top: 2px solid var(--jc-white);
   margin: 0;
-}
-
-/* Utility link (Donor Portal) — sits below the main nav, visually quieter */
-.jc-menu__utility {
-  margin-top: 1.25rem;
-}
-
-.jc-menu__utility a {
-  font-size: 0.85em;
-  opacity: 0.85;
-}
-
-.jc-menu__utility a:hover,
-.jc-menu__utility a:focus-visible {
-  opacity: 1;
 }
 
 /* Rotating + icon */

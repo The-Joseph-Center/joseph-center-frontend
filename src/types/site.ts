@@ -10,7 +10,8 @@ export interface NavItem {
 export interface HeaderNavItem {
   label: string;
   href?: string;
-  children?: { label: string; href: string }[];
+  /** External children open in a new tab — e.g. the Stripe donor portal. */
+  children?: { label: string; href: string; isExternal?: boolean }[];
 }
 
 export interface PageMeta {
