@@ -124,8 +124,11 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
       </template>
     </div>
 
-    <!-- Editing: department (+ email on the placeholder cards) fill the space
-         a quote or contact link would otherwise occupy -->
+    <!-- Editing: the intake fields sit ALONGSIDE the quote, not in place of it.
+         They originally replaced it, which meant no quote rendered anywhere on
+         the staff page while intake mode was on — invisible until the first
+         quote existed, then wrong sitewide. The quote is not editable here
+         either way: staff set it from the dashboard. -->
     <div v-if="editing" class="person-card__bottom pc-edit">
       <label class="pc-edit__field">
         <span class="pc-edit__label">Department</span>
@@ -155,6 +158,11 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
           placeholder="name@josephcentergj.com"
         />
       </label>
+
+      <!-- Read-only: shows what the public sees, and is set from the dashboard. -->
+      <p v-if="person.quote" class="person-card__quote pc-edit__quote">
+        &ldquo;{{ person.quote }}&rdquo;
+      </p>
     </div>
 
     <div v-else class="person-card__bottom">
@@ -222,6 +230,12 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
   font-weight: 700;
   font-size: 0.95rem;
 }
+.pc-edit__quote {
+  margin-top: 0.15rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border, #e0d8c5);
+}
+
 .pc-edit__input:focus {
   outline: 2px solid var(--jc-deep-green);
   outline-offset: 1px;
