@@ -89,7 +89,11 @@ const donor = reactive({
   state: '',
   zip: '',
 });
-const emailOptIn = ref(true);
+// Both consents start UNCHECKED. A pre-ticked box is not the express written
+// consent US marketing texts require, and an email list padded with people who
+// did not notice performs worse than a smaller one that opted in deliberately.
+const emailOptIn = ref(false);
+const smsOptIn = ref(false);
 // Honeypot — hidden from real donors, filled in by naive bots. Mirrors the
 // _gotcha field the Gatsby donate form used.
 const gotcha = ref('');
@@ -164,6 +168,12 @@ async function continueToPayment() {
     paymentError.value = 'Please enter a valid email address.';
     return;
   }
+  // Ticking texts without a number would silently collect a consent we can
+  // never act on.
+  if (smsOptIn.value && !donor.phone.trim()) {
+    paymentError.value = 'Add a mobile number to receive text updates, or untick that box.';
+    return;
+  }
   paymentError.value = '';
   submitting.value = true;
 
@@ -191,6 +201,7 @@ async function continueToPayment() {
         },
         feeCovered: feeCovered.value,
         emailOptIn: emailOptIn.value,
+        smsOptIn: smsOptIn.value,
       }),
     });
     if (!res.ok) {
@@ -274,7 +285,8 @@ function resetAll() {
   donor.city = '';
   donor.state = '';
   donor.zip = '';
-  emailOptIn.value = true;
+  emailOptIn.value = false;
+  smsOptIn.value = false;
   paymentError.value = '';
   submitting.value = false;
   stripeClientSecret.value = '';
@@ -442,9 +454,15 @@ watch(campaignSlug, loadContext);
           </div>
         </div>
 
-        <p class="address-prompt">
-          We'd love to send you a personal note from Mona — mind sharing your mailing address?
-        </p>
+        <!-- Default-visible and optional. No checkbox to reveal or hide it: the
+             fields can simply be left blank, so a toggle would add nothing
+             except something to visually play down. -->
+        <div class="address-block">
+          <p class="address-block__lead">Mona writes to every donor by hand.</p>
+          <p class="address-block__sub">
+            Add your address and one will be on its way. Optional — leave it blank
+            and nothing else changes.
+          </p>
         <div class="form-field">
           <label class="form-label" for="don-street">Street Address</label>
           <input id="don-street" v-model="donor.street" type="text" class="form-input" autocomplete="street-address" />
@@ -463,9 +481,7 @@ watch(campaignSlug, loadContext);
             <input id="don-zip" v-model="donor.zip" type="text" class="form-input" autocomplete="postal-code" />
           </div>
         </div>
-        <p v-if="!hasMailingAddress" class="address-nudge">
-          Mona loves sending handwritten notes — add your address to receive one.
-        </p>
+        </div>
 
         <label class="checkbox-item">
           <input type="checkbox" v-model="feeCovered" />
@@ -476,10 +492,22 @@ watch(campaignSlug, loadContext);
             </span>
           </span>
         </label>
-        <label class="checkbox-item">
-          <input type="checkbox" v-model="emailOptIn" />
-          <span>I'd like to receive email updates from The Joseph Center</span>
-        </label>
+        <!-- Separate, and separately consented. Bundling email and text into one
+             tick makes it impossible to say which someone actually agreed to. -->
+        <fieldset class="optins">
+          <legend class="optins__legend">Keep in touch (optional)</legend>
+          <label class="checkbox-item checkbox-item--quiet">
+            <input type="checkbox" v-model="emailOptIn" />
+            <span>Email me occasional updates from The Joseph Center</span>
+          </label>
+          <label class="checkbox-item checkbox-item--quiet">
+            <input type="checkbox" v-model="smsOptIn" />
+            <span>
+              Text me occasional updates
+              <span class="optins__hint">Message and data rates may apply. Reply STOP to opt out.</span>
+            </span>
+          </label>
+        </fieldset>
 
         <!-- Honeypot — hidden from real donors -->
         <input
@@ -715,6 +743,50 @@ watch(campaignSlug, loadContext);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.35rem;
+}
+
+.address-block {
+  margin: 1.75rem 0 1rem;
+  padding: 1rem 1.1rem 0.35rem;
+  background: var(--color-bg-secondary, #f5f1e8);
+  border-left: 3px solid var(--jc-gold);
+  border-radius: var(--radius-sm, 0.4rem);
+}
+.address-block__lead {
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.2rem;
+}
+.address-block__sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  margin: 0 0 0.9rem;
+}
+
+.optins {
+  border: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+}
+.optins__legend {
+  padding: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.4rem;
+}
+.checkbox-item--quiet span { font-size: var(--text-sm); }
+.optins__hint {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 0.1rem;
 }
 
 .address-prompt {

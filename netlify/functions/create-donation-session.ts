@@ -53,6 +53,7 @@ interface RequestBody {
   donor: DonorInput;
   feeCovered: boolean;
   emailOptIn: boolean;
+  smsOptIn: boolean;
 }
 
 function jsonError(statusCode: number, message: string) {
@@ -239,6 +240,7 @@ export const handler: Handler = async (event) => {
           campaign_slug: body.campaignSlug ?? '',
           fee_covered: String(feeCovered),
           email_opt_in: String(body.emailOptIn),
+          sms_opt_in: String(body.smsOptIn === true),
           base_amount_cents: String(baseAmountCents),
           fees_covered_cents: String(coveredCents),
         },
@@ -270,6 +272,7 @@ export const handler: Handler = async (event) => {
           campaign_slug: body.campaignSlug ?? '',
           fee_covered: String(feeCovered),
           email_opt_in: String(body.emailOptIn),
+          sms_opt_in: String(body.smsOptIn === true),
           base_amount_cents: String(baseAmountCents),
           fees_covered_cents: String(coveredCents),
         },
@@ -287,8 +290,8 @@ export const handler: Handler = async (event) => {
       sql: `INSERT INTO donations
               (donor_id, amount_cents, frequency, campaign_id,
                stripe_payment_id, stripe_subscription_id, stripe_customer_id,
-               status, fee_covered, email_opt_in)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+               status, fee_covered, email_opt_in, sms_opt_in)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
             RETURNING id`,
       args: [
         donorId,
@@ -300,6 +303,7 @@ export const handler: Handler = async (event) => {
         customer.id,
         feeCovered ? 1 : 0,
         body.emailOptIn ? 1 : 0,
+        body.smsOptIn === true ? 1 : 0,
       ],
     });
     const donationId = inserted.rows[0]!.id as string;

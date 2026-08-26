@@ -45,7 +45,7 @@ async function markDonationSucceeded(stripePaymentId: string) {
   const result = await turso.execute({
     sql: `UPDATE donations SET status = 'succeeded'
           WHERE stripe_payment_id = ? AND status = 'pending'
-          RETURNING id, donor_id, amount_cents, frequency, campaign_id, fee_covered, email_opt_in, stripe_subscription_id`,
+          RETURNING id, donor_id, amount_cents, frequency, campaign_id, fee_covered, email_opt_in, sms_opt_in, stripe_subscription_id`,
     args: [stripePaymentId],
   });
   return result.rows[0] ?? null;
@@ -61,7 +61,7 @@ async function insertRenewalDonation(opts: {
   amountCents: number;
 }) {
   const orig = await turso.execute({
-    sql: `SELECT donor_id, campaign_id, fee_covered, email_opt_in
+    sql: `SELECT donor_id, campaign_id, fee_covered, email_opt_in, sms_opt_in
           FROM donations
           WHERE stripe_subscription_id = ?
           ORDER BY created_at ASC
@@ -75,9 +75,9 @@ async function insertRenewalDonation(opts: {
     sql: `INSERT INTO donations
             (donor_id, amount_cents, frequency, campaign_id,
              stripe_payment_id, stripe_subscription_id, stripe_customer_id,
-             status, fee_covered, email_opt_in)
-          VALUES (?, ?, 'monthly', ?, ?, ?, ?, 'succeeded', ?, ?)
-          RETURNING id, donor_id, amount_cents, frequency, campaign_id, fee_covered, email_opt_in, stripe_subscription_id`,
+             status, fee_covered, email_opt_in, sms_opt_in)
+          VALUES (?, ?, 'monthly', ?, ?, ?, ?, 'succeeded', ?, ?, ?)
+          RETURNING id, donor_id, amount_cents, frequency, campaign_id, fee_covered, email_opt_in, sms_opt_in, stripe_subscription_id`,
     args: [
       seed.donor_id,
       opts.amountCents,
@@ -87,6 +87,7 @@ async function insertRenewalDonation(opts: {
       opts.stripeCustomerId,
       seed.fee_covered,
       seed.email_opt_in,
+      seed.sms_opt_in,
     ],
   });
   return inserted.rows[0] ?? null;
@@ -235,6 +236,7 @@ export const handler: Handler = async (event) => {
     const campaignId = (donation.campaign_id as string | null) ?? null;
     const feeCovered = (donation.fee_covered as number) === 1;
     const emailOptIn = (donation.email_opt_in as number) === 1;
+    const smsOptIn = (donation.sms_opt_in as number) === 1;
 
     if (campaignId) await incrementCampaign(campaignId, amountCents);
 
@@ -333,6 +335,25 @@ export const handler: Handler = async (event) => {
       });
       if (!aweberResult.ok) {
         console.error('AWeber sync failed for donor:', email, aweberResult.error);
+      }
+    }
+
+    // Text consent is recorded at submission but only acted on here, once the
+    // payment has actually gone through — signing someone up off the back of a
+    // donation that then declined would be consent they never really gave.
+    // Renewals are skipped: they consented once, at the original gift.
+    if (smsOptIn && !isRenewal && phone) {
+      try {
+        await turso.execute({
+          sql: `INSERT INTO sms_subscribers
+                  (first_name, last_name, email, email_consent,
+                   phone_number, sms_consent, list, source)
+                VALUES (?, ?, ?, ?, ?, 1, 'donors', 'donation-form')`,
+          args: [firstName, lastName, email, emailOptIn ? 1 : 0, phone],
+        });
+      } catch (err) {
+        // Never block the webhook — Stripe should not retry over this.
+        console.error('SMS subscribe failed for donor:', email, err);
       }
     }
 
