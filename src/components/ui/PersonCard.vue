@@ -166,12 +166,15 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
     </div>
 
     <div v-else class="person-card__bottom">
-      <!-- Quote takes precedence over the contact link when set -->
+      <!-- Both, where both exist. These used to be mutually exclusive, so
+           adding a quote silently removed someone's contact link — they serve
+           different purposes and there is no reason to trade one for the other.
+           The bottom section already stacks and grows, so it just gets taller. -->
       <p v-if="person.quote" class="person-card__quote">
         &ldquo;{{ person.quote }}&rdquo;
       </p>
       <SmartLink
-        v-else-if="contactHref"
+        v-if="contactHref"
         :to="contactHref"
         class="person-card__contact-link"
       >
