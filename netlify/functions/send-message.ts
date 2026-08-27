@@ -1,5 +1,6 @@
 import type { Context } from '@netlify/functions';
 import { Resend } from 'resend';
+import { createClient } from '@libsql/client/web';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,6 +37,29 @@ export default async (req: Request, _context: Context) => {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // Keep a copy before sending the notification.
+    //
+    // Until now a contact message existed only as an email, so a deleted or
+    // filtered message was simply gone, with no record that anyone had written
+    // in. The dashboard inbox is the durable copy; the email is the nudge.
+    //
+    // Wrapped and non-fatal on purpose, in both directions: a database problem
+    // must not swallow the message the way an INSERT-then-email ordering once
+    // lost five forms' worth of submissions, and equally the sender should not
+    // see an error because a row failed to write when the email went out fine.
+    try {
+      const db = createClient({
+        url: process.env.TURSO_DATABASE_URL!,
+        authToken: process.env.TURSO_AUTH_TOKEN!,
+      });
+      await db.execute({
+        sql: 'INSERT INTO contact_messages (name, email, phone, message) VALUES (?, ?, ?, ?)',
+        args: [String(name).slice(0, 200), String(email).slice(0, 200), null, String(message).slice(0, 5000)],
+      });
+    } catch (dbErr) {
+      console.error('send-message: could not store the message:', dbErr);
     }
 
     const { error } = await resend.emails.send({
