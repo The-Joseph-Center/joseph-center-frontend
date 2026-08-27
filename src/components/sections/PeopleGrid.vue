@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed } from 'vue';
 import PersonCard from '@/components/ui/PersonCard.vue';
 import { useSanity } from '@/composables/useSanity';
-import { DEPARTMENTS, departmentLabel } from '@/lib/departments';
+import { DEPARTMENTS } from '@/lib/departments';
 import type { SanityImageSource } from '@/types/site';
 
 interface Section {
   source?: 'staff' | 'board';
   showContact?: boolean;
   groupByDepartment?: boolean;
-  // TEMPORARY — turns the cards into editable forms. Remove with the intake.
-  intakeMode?: boolean;
 }
 
 interface Person {
@@ -109,152 +107,11 @@ const groups = computed<Group[]>(() => {
 
   return out;
 });
-
-// ─────────────────────────────────────────────────────────────────────────
-// TEMPORARY — inline intake editing.
-//
-// Every card becomes editable in place, so a manager fixes the record in front
-// of them instead of matching it against a separate form further down the page.
-//
-// Cards in the trailing group (the joseph_N placeholders, which carry only the
-// 'unknown' department) get the full set of fields — they need identifying
-// outright. Cards filed under a real department get title and department only,
-// since those are the questionable parts.
-//
-// Nothing is written to Sanity; the answers are emailed for review.
-// To switch off: untick "Intake mode" on the People Grid section in Studio.
-// ─────────────────────────────────────────────────────────────────────────
-interface Draft {
-  name: string;
-  title: string;
-  department: string;
-  departmentOther: string;
-  email: string;
-}
-
-const intake = computed(
-  () => sourceType.value === 'staff' && props.section?.intakeMode === true
-);
-
-const departmentOptions = DEPARTMENTS.map((d) => ({ value: d.value, label: d.label }));
-
-const drafts = reactive<Record<string, Draft>>({});
-// Ids in the trailing group get the full field set.
-const fullEditIds = ref<Set<string>>(new Set());
-
-function seedDrafts() {
-  if (!intake.value) return;
-  const list = people.value ?? [];
-  const trailing = groups.value.find((g) => g.key === '__ungrouped');
-  fullEditIds.value = new Set((trailing?.people ?? []).map((p) => p._id));
-
-  for (const p of list) {
-    const isPlaceholder = fullEditIds.value.has(p._id);
-    const current = (p.departments ?? []).find((d) => d !== 'unknown') ?? '';
-    drafts[p._id] = {
-      name: p.name ?? '',
-      // The placeholder cards start blank so a manager fills them fresh; named
-      // staff are pre-filled from the CMS so only real edits stand out.
-      title: isPlaceholder ? '' : (p.title ?? ''),
-      department: isPlaceholder ? '' : current,
-      departmentOther: '',
-      email: isPlaceholder ? '' : (p.email ?? ''),
-    };
-  }
-}
-watch([people, intake], seedDrafts, { immediate: true });
-
-function editModeFor(id: string): 'off' | 'partial' | 'full' {
-  if (!intake.value) return 'off';
-  return fullEditIds.value.has(id) ? 'full' : 'partial';
-}
-
-function resolvedDepartment(d: Draft): string {
-  if (d.department === '__other') return d.departmentOther.trim();
-  return d.department ? departmentLabel(d.department) : '';
-}
-
-const submittedBy = ref('');
-const gotcha = ref('');
-const submitting = ref(false);
-const submitError = ref('');
-const submitted = ref(false);
-
-const edits = computed(() => {
-  if (!intake.value) return [];
-  return (people.value ?? [])
-    .map((p) => {
-      const d = drafts[p._id];
-      if (!d) return null;
-      const isPlaceholder = fullEditIds.value.has(p._id);
-      const before = {
-        name: p.name ?? '',
-        title: p.title ?? '',
-        department: (p.departments ?? []).map(departmentLabel).join(', '),
-        email: p.email ?? '',
-      };
-      const after = {
-        name: d.name.trim(),
-        title: d.title.trim(),
-        department: resolvedDepartment(d),
-        email: d.email.trim(),
-      };
-      const changed =
-        (isPlaceholder && (after.name !== before.name || after.title || after.department || after.email)) ||
-        (!isPlaceholder &&
-          (after.title !== before.title || (after.department && after.department !== before.department)));
-      if (!changed) return null;
-      return {
-        staffId: p._id,
-        currentName: p.name ?? '(unnamed)',
-        imageUrl: p.imageUrl ?? null,
-        kind: isPlaceholder ? 'identification' : 'correction',
-        nameBefore: before.name, nameAfter: after.name,
-        titleBefore: before.title, titleAfter: after.title,
-        departmentBefore: before.department, departmentAfter: after.department,
-        emailBefore: before.email, emailAfter: after.email,
-      };
-    })
-    .filter(Boolean);
-});
-
-async function submitIntake() {
-  if (!edits.value.length) {
-    submitError.value = 'Nothing has been changed yet.';
-    return;
-  }
-  submitting.value = true;
-  submitError.value = '';
-  try {
-    const res = await fetch('/.netlify/functions/submit-staff-intake', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submittedBy: submittedBy.value, _gotcha: gotcha.value, edits: edits.value }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `Submission failed (${res.status})`);
-    submitted.value = true;
-  } catch (err) {
-    submitError.value = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-  } finally {
-    submitting.value = false;
-  }
-}
 </script>
 
 <template>
   <section class="people-grid">
     <div class="people-grid__inner">
-      <!-- TEMPORARY — intake banner -->
-      <div v-if="intake && !submitted" class="intake-note">
-        <p class="intake-note__label">Internal — temporary</p>
-        <p class="intake-note__text">
-          Edit any card directly. Cards without a department need a name, title,
-          department and email; the rest just need their title and department
-          checked. Nothing here changes the live site — your answers are emailed
-          for review.
-        </p>
-      </div>
       <div v-if="loading" class="people-grid__state">
         <p>Loading…</p>
       </div>
@@ -278,9 +135,6 @@ async function submitIntake() {
               :key="`${group.key}-${person._id}`"
               :person="person"
               :show-contact="showContact"
-              :edit-mode="editModeFor(person._id)"
-              :draft="drafts[person._id] ?? null"
-              :department-options="departmentOptions"
             />
           </div>
         </section>
@@ -298,9 +152,6 @@ async function submitIntake() {
             :key="person._id"
             :person="person"
             :show-contact="showContact"
-            :edit-mode="editModeFor(person._id)"
-            :draft="drafts[person._id] ?? null"
-            :department-options="departmentOptions"
           />
         </div>
 
@@ -315,134 +166,15 @@ async function submitIntake() {
               :person="person"
               :show-contact="showContact"
               :show-advisory-label="false"
-              :edit-mode="editModeFor(person._id)"
-              :draft="drafts[person._id] ?? null"
-              :department-options="departmentOptions"
             />
           </div>
         </section>
       </template>
-      <!-- TEMPORARY — confirmation, shown in place of the sticky bar -->
-      <div v-if="intake && submitted" class="intake-bar intake-bar--done" role="status">
-        <p><strong>Thank you — that’s been sent.</strong> Your changes are on their way for review.</p>
-      </div>
-
-      <!-- TEMPORARY — sticky submit bar -->
-      <div v-if="intake && !submitted && !loading" class="intake-bar">
-        <div class="intake-bar__inner">
-          <input
-            v-model="submittedBy"
-            type="text"
-            class="intake-bar__who"
-            placeholder="Your name (optional)"
-            autocomplete="off"
-          />
-          <input
-            v-model="gotcha"
-            type="text"
-            name="_gotcha"
-            tabindex="-1"
-            autocomplete="off"
-            class="intake-bar__honeypot"
-            aria-hidden="true"
-          />
-          <p class="intake-bar__tally">
-            {{ edits.length }} card{{ edits.length === 1 ? '' : 's' }} edited
-          </p>
-          <button
-            type="button"
-            class="btn-primary intake-bar__submit"
-            :disabled="submitting || !edits.length"
-            @click="submitIntake"
-          >
-            {{ submitting ? 'Sending…' : 'Submit changes' }}
-          </button>
-        </div>
-        <p v-if="submitError" class="intake-bar__error" role="alert">{{ submitError }}</p>
-      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-/* ── TEMPORARY: intake mode chrome ── */
-.intake-note {
-  background: var(--color-bg-secondary, #f5f1e8);
-  border-left: 4px solid var(--jc-gold);
-  border-radius: 0.4rem;
-  padding: 1rem 1.25rem;
-  margin-bottom: 2rem;
-}
-.intake-note__label {
-  font-family: var(--font-heading);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--jc-gold);
-  margin: 0 0 0.35rem;
-}
-.intake-note__text {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--color-text-muted);
-  max-width: 68ch;
-}
-
-.intake-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-  margin-top: 2.5rem;
-  background: var(--color-bg, #fff);
-  border: 1px solid var(--color-border, #e0d8c5);
-  border-radius: var(--radius-card, 0.75rem);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-  padding: 1rem 1.25rem;
-}
-.intake-bar__inner {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.intake-bar__who {
-  flex: 1 1 200px;
-  min-width: 0;
-  padding: 0.5rem 0.65rem;
-  font-size: var(--text-sm);
-  border: 1px solid var(--color-border, #e0d8c5);
-  border-radius: 0.3rem;
-  background: #fff;
-  color: var(--color-text);
-}
-.intake-bar__tally {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-.intake-bar__submit { flex: 0 0 auto; }
-.intake-bar__submit:disabled { opacity: 0.55; cursor: not-allowed; }
-.intake-bar__honeypot { display: none; }
-.intake-bar__error {
-  margin: 0.75rem 0 0;
-  font-size: var(--text-sm);
-  color: #8a1f1f;
-}
-.intake-bar--done {
-  position: static;
-  border-color: var(--jc-gold);
-  text-align: center;
-}
-.intake-bar--done p { margin: 0; color: var(--color-text); }
-
-.people-grid {
-  padding: 2rem 1.5rem 4rem;
-  background: var(--color-bg);
-}
-
 .people-grid__inner {
   max-width: 1100px;
   margin: 0 auto;
