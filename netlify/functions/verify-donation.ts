@@ -289,12 +289,22 @@ export const handler: Handler = async (event) => {
           stripeReceiptUrl,
         });
       }
-      await resend.emails.send(donorBaseEnvelope({
-        to: email,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-      }));
+      // A send failure must not fail the webhook. markDonationSucceeded has
+      // already flipped the row, so Stripe's retry short-circuits at the "no
+      // matching donation row" guard and never reaches this code again — a
+      // thrown error here would mean the donor is charged, receives nothing,
+      // and no retry can ever recover it. Logged loudly instead: the payment
+      // itself is recorded either way.
+      try {
+        await resend.emails.send(donorBaseEnvelope({
+          to: email,
+          subject: rendered.subject,
+          html: rendered.html,
+          text: rendered.text,
+        }));
+      } catch (err) {
+        console.error('verify-donation: donor confirmation FAILED to send to', email, err);
+      }
     }
 
     // ─── Staff notification ───────────────────────────────────────────
@@ -306,12 +316,16 @@ export const handler: Handler = async (event) => {
         frequency, campaignName, feeCovered, stripeReceiptUrl,
         isRenewal,
       });
-      await resend.emails.send(staffBaseEnvelope({
-        to: staffTo,
-        subject: staffRendered.subject,
-        html: staffRendered.html,
-        text: staffRendered.text,
-      }));
+      try {
+        await resend.emails.send(staffBaseEnvelope({
+          to: staffTo,
+          subject: staffRendered.subject,
+          html: staffRendered.html,
+          text: staffRendered.text,
+        }));
+      } catch (err) {
+        console.error('verify-donation: staff notification FAILED to send:', err);
+      }
     } else {
       console.warn('STAFF_DONATION_TO_EMAIL not set — staff notification skipped');
     }
