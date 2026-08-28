@@ -64,8 +64,12 @@ interface FeedResult {
 // featuredImage / image are returned as the raw inline objects (asset ref +
 // hotspot + crop + alt) so the frontend can pipe them through sanityImage()
 // and honor the crop/hotspot the editor set in Studio.
+// Drafts excluded explicitly. Sanity already withholds drafts.* from
+// unauthenticated reads, so this is belt-and-braces rather than a fix — but the
+// dashboard blog editor creates drafts, and the day this query is given a token
+// the filter is the only thing between an unfinished post and the public blog.
 const query = `{
-  "posts": *[_type == "post"] | order(publishedAt desc) {
+  "posts": *[_type == "post" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
     _id, _type, title, slug, excerpt, publishedAt, postType,
     featuredImage,
     "authorName": author->name,

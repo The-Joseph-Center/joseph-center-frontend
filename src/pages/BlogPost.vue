@@ -39,7 +39,7 @@ const router = useRouter();
 // featuredImage returns the raw inline object (asset ref + hotspot + crop +
 // alt) so the frontend can pipe it through sanityImage() and honor the
 // editor's crop/hotspot.
-const query = `*[_type == "post" && slug.current == $slug][0]{
+const query = `*[_type == "post" && slug.current == $slug && !(_id in path("drafts.**"))][0]{
   title, publishedAt, postType, excerpt,
   featuredImage,
   "authorName": author->name,

@@ -39,7 +39,7 @@ const postCount = computed(() => Math.min(Math.max(props.section?.postCount ?? 3
 // featuredImage is returned as the raw inline object (asset ref + hotspot +
 // crop + alt) so sanityImage() can honor the editor's crop/hotspot.
 const query = computed(
-  () => `*[_type == "post"] | order(publishedAt desc)[0...${postCount.value}]{
+  () => `*[_type == "post" && !(_id in path("drafts.**"))] | order(publishedAt desc)[0...${postCount.value}]{
     _id, title, slug, excerpt, publishedAt, postType,
     featuredImage
   }`
