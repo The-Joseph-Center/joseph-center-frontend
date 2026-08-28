@@ -10,12 +10,25 @@ interface BannerDoc {
   title?: string;
   message?: TypedObject[];
   active?: boolean;
+  startsAt?: string;
+  endsAt?: string;
 }
 
-// Single-doc query — only return the banner if it's marked active. coalesce
-// to true so docs predating the active field still show.
-const query = `*[_type == "banner" && coalesce(active, true) == true][0]{
-  _id, _updatedAt, title, message, active
+// Only an active banner, and only inside its scheduled window. coalesce to true
+// so docs predating the active field still show.
+//
+// The ordering matters: this takes [0] of the matches, and with more than one
+// banner document that used to be whichever Sanity happened to return first.
+// Most recently edited wins, so "the one I just turned on" is the one visitors
+// see. The dashboard also switches the others off when one is activated, but
+// the site should not depend on that having worked.
+const query = `*[
+  _type == "banner"
+  && coalesce(active, true) == true
+  && (!defined(startsAt) || startsAt <= now())
+  && (!defined(endsAt) || endsAt >= now())
+] | order(_updatedAt desc) [0]{
+  _id, _updatedAt, title, message, active, startsAt, endsAt
 }`;
 
 const { data: banner, loading } = useSanity<BannerDoc | null>(query);
