@@ -22,6 +22,7 @@ interface Person {
   image?: SanityImageSource | null;
   source?: string | null;
   quote?: string | null;
+  quoteSource?: string | null;
 }
 
 const props = defineProps<{ programSlug: string }>();
@@ -36,7 +37,7 @@ const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || '2024-01-01';
 // `hidden != true` also matches documents with no `hidden` field at all, so
 // existing staff stay visible without needing a backfill.
 const QUERY = `*[_type == "staff" && $department in departments && hidden != true] | order(name asc){
-  _id, name, title, email, image, source, quote
+  _id, name, title, email, image, source, quote, quoteSource
 }`;
 
 // The department this section is showing, or null when the program has none.

@@ -12,6 +12,7 @@ interface Person {
   image?: SanityImageSource | null;
   source?: string | null;
   quote?: string | null;
+  quoteSource?: string | null;
   isAdvisoryBoard?: boolean;
 }
 
@@ -53,6 +54,15 @@ const contactHref = computed(() => {
 });
 
 const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us');
+
+// The card supplies its own curly quotes, so a quote pasted with marks already
+// around it rendered as ““like this””. Stripping them here means the display is
+// right whatever anyone types, rather than relying on everyone typing it the
+// same way.
+const quoteText = computed(() =>
+  (props.person.quote || '').trim().replace(/^["“”']+/, '').replace(/["“”']+$/, '').trim()
+);
+const quoteSource = computed(() => (props.person.quoteSource || '').trim());
 </script>
 
 <template>
@@ -81,9 +91,10 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
            adding a quote silently removed someone's contact link — they serve
            different purposes and there is no reason to trade one for the other.
            The bottom section already stacks and grows, so it just gets taller. -->
-      <p v-if="person.quote" class="person-card__quote">
-        &ldquo;{{ person.quote }}&rdquo;
-      </p>
+      <blockquote v-if="quoteText" class="person-card__quote">
+        <span class="person-card__quote-text">&ldquo;{{ quoteText }}&rdquo;</span>
+        <cite v-if="quoteSource" class="person-card__quote-source">&mdash; {{ quoteSource }}</cite>
+      </blockquote>
       <SmartLink
         v-if="contactHref"
         :to="contactHref"
@@ -197,6 +208,14 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
   text-decoration: underline;
 }
 
+.person-card__quote-source {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .person-card__quote {
   font-family: var(--font-body);
   font-size: var(--text-xs);
@@ -204,7 +223,14 @@ const firstName = computed(() => (props.person.name || '').split(' ')[0] || 'us'
   color: var(--color-text-muted);
   line-height: 1.5;
   margin: 0;
-  /* Clamp to 3 lines so cards stay consistent height */
+  margin: 0;
+  padding: 0;
+}
+
+/* The 3-line clamp that keeps cards a consistent height sits on the quote text
+   alone. Clamping the whole blockquote would drop the attribution on a longer
+   quote, and the name is the part you cannot lose. */
+.person-card__quote-text {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;

@@ -19,6 +19,7 @@ interface Person {
   image?: SanityImageSource | null;
   source?: string | null;
   quote?: string | null;
+  quoteSource?: string | null;
   isAdvisoryBoard?: boolean;
   departments?: string[] | null;
   imageUrl?: string | null;
@@ -43,7 +44,7 @@ const grouped = computed(
 // `hidden != true` also matches documents with no `hidden` field at all, so
 // existing people stay visible without needing a backfill.
 const query = `*[_type == $source && hidden != true] | order(name asc){
-  _id, name, title, email, image, source, quote, isAdvisoryBoard, departments,
+  _id, name, title, email, image, source, quote, quoteSource, isAdvisoryBoard, departments,
   "imageUrl": image.asset->url
 }`;
 
