@@ -176,6 +176,23 @@ const groups = computed<Group[]>(() => {
 </template>
 
 <style scoped>
+/* The section carried no padding at all, so the last row of cards sat flush
+   against the footer and, on anything narrower than the 1100px inner width, the
+   cards touched both side edges too.
+   No padding at the top on purpose: the text section above already ends with
+   4rem, and adding the same again here would double a gap that reads correctly
+   today. Matches ProgramStaffSection, which renders these same cards on the
+   program pages. */
+.people-grid {
+  padding: 0 1.5rem 4rem;
+}
+
+@media (max-width: 480px) {
+  .people-grid {
+    padding: 0 1.25rem 3rem;
+  }
+}
+
 .people-grid__inner {
   max-width: 1100px;
   margin: 0 auto;
