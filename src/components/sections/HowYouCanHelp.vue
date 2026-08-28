@@ -93,7 +93,7 @@ const donorIntroParagraphs = computed(() => {
   border-top: 1px solid var(--color-border);
 }
 
-/* Matches the 780px centred column every other section on the program page
+/* Matches the 780px centered column every other section on the program page
    uses (vision, how-we-help, campaigns). At 1200px this block started 210px
    further left than the sections above it, which read as the section being
    shifted rather than as a deliberately wider one. */

@@ -11,11 +11,11 @@ import { useSanity } from '@/composables/useSanity';
 //    than a categorical palette. The reader sees the ranking in the color.
 //    JC's brand hues were checked as a categorical set first and failed:
 //    olive and rust collapse to ΔE 3.2 under protanopia, and sage/green sit at
-//    8.3 even in full colour vision.
+//    8.3 even in full color vision.
 //  • Both ramps below are verified: monotone OKLCH lightness, every step ≥ 2:1
 //    against its own surface. Dark mode gets its own steps (anchored lighter),
 //    not an automatic flip.
-//  • Identity never rests on colour alone — every slice is named in the key,
+//  • Identity never rests on color alone — every slice is named in the key,
 //    larger slices carry their share directly, and a table view holds the
 //    exact figures.
 
@@ -340,7 +340,7 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
 
 <style scoped>
 /* Ordinal ramp — a single JC-green hue stepping dark→light by share, so the
-   ranking is legible in the colour itself. Generated in OKLCH at a constant
+   ranking is legible in the color itself. Generated in OKLCH at a constant
    hue with an even 0.074 lightness step, then verified: monotone lightness,
    and every step ≥ 2:1 against its own surface. `--alloc-text-N` is the ink
    each step needs for an in-slice label; the crossover sits at a different
@@ -455,7 +455,7 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
   opacity: 0.45;
 }
 
-/* Values wear text tokens, never the series colour — the slice beside them
+/* Values wear text tokens, never the series color — the slice beside them
    carries the identity. */
 .alloc__arc-label {
   font-family: var(--font-heading);

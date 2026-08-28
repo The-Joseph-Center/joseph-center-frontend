@@ -59,7 +59,7 @@ const bandColor   = computed(() => props.section?.bandColor ?? 'gold');
   align-items: center;
 }
 
-/* No video yet — collapse to a single centred column instead of leaving an
+/* No video yet — collapse to a single centered column instead of leaving an
    empty 16:9 well. Setting a videoId in Studio restores the two-up split. */
 .our-story--no-video {
   grid-template-columns: 1fr;
