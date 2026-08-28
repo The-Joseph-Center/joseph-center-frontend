@@ -507,27 +507,45 @@
     color: var(--jc-charcoal);
   }
 
-  /* Ghost — white outline for use on dark/colored backgrounds */
+  /* Ghost — outlined counterpart to btn-primary, for light backgrounds.
+     Use .btn-ghost--on-dark over a photo or a colored band. */
   .btn-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
     background-color: transparent;
-    color: white;
+    /* Deep green, not white. This was white text on a white border, written for
+       a dark hero that no longer uses it — every place it actually renders is a
+       light background, where it measured 1.05:1 and was invisible until hover
+       flipped it. Deep green is 7.12:1 on the section background, and hovering
+       to a filled deep green with white text is 7.45:1, so both states pass AA
+       and the pair reads as the outline counterpart to btn-primary. */
+    color: var(--color-authority);
     font-family: var(--font-heading);
     font-size: var(--text-sm);
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border-radius: var(--radius-pill);
-    border: 2px solid white;
+    border: 2px solid var(--color-authority);
     cursor: pointer;
     transition: background-color var(--transition-fast), color var(--transition-fast);
     text-decoration: none;
     white-space: nowrap;
   }
   .btn-ghost:hover {
+    background-color: var(--color-authority);
+    color: white;
+  }
+
+  /* For the day something does put this on a dark background again. */
+  .btn-ghost--on-dark {
+    color: white;
+    border-color: white;
+  }
+
+  .btn-ghost--on-dark:hover {
     background-color: white;
     color: var(--color-authority);
   }
