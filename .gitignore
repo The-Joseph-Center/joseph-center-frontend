@@ -15,3 +15,8 @@ deno.lock
 # macOS resource forks
 ._*
 .DS_Store
+
+# This repo installs with pnpm. A package-lock.json committed alongside
+# pnpm-lock.yaml leaves the package manager decided by Netlify detection
+# rather than by the repo, and the last one drifted four months out of date.
+package-lock.json
