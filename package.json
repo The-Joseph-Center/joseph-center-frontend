@@ -33,5 +33,13 @@
     "typescript": "~5.7.0",
     "vite": "^6.2.0",
     "vue-tsc": "^2.2.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "^2.1.4",
+      "nanoid": "^5.1.6",
+      "postcss": "^8.5.26",
+      "ws": "^8.21.3"
+    }
   }
 }
