@@ -15,8 +15,9 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-    <!-- Simple Analytics — cookieless, privacy-first -->
-    <script async defer src="https://sa.##CLIENT_DOMAIN##/latest.js"></script>
-    <noscript><img src="https://sa.##CLIENT_DOMAIN##/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
+    <!-- Simple Analytics — cookieless. The sa. subdomain is a CNAME to
+         Simple Analytics, which keeps the request first-party. -->
+    <script async defer src="https://sa.josephcentergj.com/latest.js"></script>
+    <noscript><img src="https://sa.josephcentergj.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
   </body>
 </html>
