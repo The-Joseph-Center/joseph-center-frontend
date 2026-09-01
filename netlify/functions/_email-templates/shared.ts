@@ -9,7 +9,7 @@
 export const BRAND = {
   name: 'The Joseph Center',
   address1: '2511 Belford Ave #B, Grand Junction, CO 81501',
-  phone: '(970) 243-7672',
+  phone: '(970) 245-7672',
   email: 'jc@josephcentergj.com',
   website: 'josephcentergj.com',
   // Brand palette per the email spec
@@ -26,8 +26,14 @@ export interface RenderedEmail {
   text: string;
 }
 
+// Single quotes around the multi-word faces, because this string is
+// interpolated into style="…" attributes. With double quotes the attribute
+// terminated at "Segoe, and every declaration after the font-family — including
+// color:#ffffff on the receipt button — was silently discarded, which is why
+// that button rendered as a default blue link on dark green and was reported as
+// almost unreadable. Six style attributes per email were affected.
 const SYSTEM_FONT_STACK =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 // Hidden preview snippet at the top of every email so inbox listings show
 // something more meaningful than the first visible word of body copy.
@@ -134,9 +140,20 @@ export function muted(html: string): string {
 }
 
 export function button(label: string, href: string): string {
+  // The fill is declared three ways on purpose. White on #1B4D4A measures
+  // 9.52:1, so the colours were never the problem — the markup was. The cell
+  // carried `bgcolor` but no `background-color` in its style, and a client that
+  // honours one and not the other, or that inverts them differently in dark
+  // mode, left white text on a white button. Reported as almost unreadable.
+  //
+  // bgcolor covers the oldest clients, the inline background-color covers the
+  // rest, and the border means that even if every fill is stripped the label
+  // still sits inside a visible outline rather than vanishing. The anchor
+  // repeats the fill so the padded area is coloured even where the cell is not.
+  const fill = BRAND.primary;
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-  <tr><td bgcolor="${BRAND.primary}" style="border-radius:4px;">
-    <a href="${escapeAttr(href)}" style="display:inline-block;padding:12px 24px;font-family:${SYSTEM_FONT_STACK};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:4px;">${escapeHtml(label)}</a>
+  <tr><td bgcolor="${fill}" style="background-color:${fill};border:1px solid ${fill};border-radius:4px;">
+    <a href="${escapeAttr(href)}" style="display:inline-block;padding:12px 24px;font-family:${SYSTEM_FONT_STACK};font-size:15px;font-weight:600;color:#ffffff;background-color:${fill};text-decoration:none;border-radius:4px;">${escapeHtml(label)}</a>
   </td></tr>
 </table>`;
 }

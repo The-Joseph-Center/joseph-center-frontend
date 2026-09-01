@@ -24,7 +24,7 @@ ${h1(`We're glad you're here, ${escapeHtml(v.firstName)}.`)}
 ${p(`Someone from our team will be in touch within one business day to find the best fit for you.`)}
 ${departmentsLine}
 ${skillsLine}
-${p('In the meantime, if you have any questions, reach us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a> or (970) 243-7672.')}
+${p('In the meantime, if you have any questions, reach us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a> or (970) 245-7672.')}
 ${p(`<strong>We'll talk soon.</strong><br>The Joseph Center`)}
 `.trim();
 
@@ -33,7 +33,7 @@ Hi ${v.firstName},
 
 We're glad you want to help. Someone from our team will be in touch within one business day to find the best fit for you.
 
-${v.volunteerType === 'program' && v.departments?.length ? `Where you'd like to help: ${v.departments.join(', ')}\n\n` : ''}${v.volunteerType === 'skills' && v.skills?.length ? `Skills you're offering: ${v.skills.join(', ')}\n\n` : ''}In the meantime, if you have any questions, reach us at jc@josephcentergj.com or (970) 243-7672.
+${v.volunteerType === 'program' && v.departments?.length ? `Where you'd like to help: ${v.departments.join(', ')}\n\n` : ''}${v.volunteerType === 'skills' && v.skills?.length ? `Skills you're offering: ${v.skills.join(', ')}\n\n` : ''}In the meantime, if you have any questions, reach us at jc@josephcentergj.com or (970) 245-7672.
 
 We'll talk soon.
 The Joseph Center

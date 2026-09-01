@@ -40,7 +40,7 @@ ${p(`Your gift of <strong>${amount}</strong> just made a real difference for som
 ${campaignBlock}
 ${summaryTable(summaryRows)}
 ${receiptBtn}
-${p('The Joseph Center is 100% community funded. Gifts like yours are the only reason our doors stay open.')}
+${p('The Joseph Center is 100% community and foundation funded. Gifts like yours are the only reason our doors stay open.')}
 ${mailingNote}
 ${signature({ name: 'Mona Highline', title: 'Founder & CEO, The Joseph Center' })}
 ${muted('No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.')}
@@ -56,7 +56,7 @@ ${v.campaignName ? `Your gift supports: ${v.campaignName}\n\n` : ''}Gift summary
 - Date: ${date}${v.feeCovered ? `\n- Processing fee: Covered by you — thank you.` : ''}
 - Total charged: ${total}
 
-${v.stripeReceiptUrl ? `View your Stripe receipt: ${v.stripeReceiptUrl}\n\n` : ''}The Joseph Center is 100% community funded. Gifts like yours are the only reason our doors stay open.
+${v.stripeReceiptUrl ? `View your Stripe receipt: ${v.stripeReceiptUrl}\n\n` : ''}The Joseph Center is 100% community and foundation funded. Gifts like yours are the only reason our doors stay open.
 ${v.hasMailingAddress ? '\nAnd watch your mailbox — Mona will be sending you a personal note.\n' : ''}
 With gratitude,
 Mona Highline
