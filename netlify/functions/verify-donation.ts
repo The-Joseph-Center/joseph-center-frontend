@@ -11,6 +11,9 @@ import { addAweberSubscriber } from './_lib/aweber';
 // Stripe webhook handler. Receives:
 //   - payment_intent.succeeded  → one-time gifts
 //   - invoice.paid              → recurring monthly gifts (first + renewals)
+//   - customer.updated          → a donor editing their own details in the
+//                                 Stripe Customer Portal; copied onto the
+//                                 donors row so the letter queue stays right
 // On success:
 //   1. Mark the matching donations row 'succeeded' (or INSERT a new row for
 //      monthly renewals, which don't have a pre-existing pending row)
@@ -194,6 +197,45 @@ export const handler: Handler = async (event) => {
       renewalAmountCents = invoice.amount_paid ?? null;
       renewalSubscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : null;
       renewalCustomerId = typeof invoice.customer === 'string' ? invoice.customer : null;
+    } else if (stripeEvent.type === 'customer.updated') {
+      // A donor changing their address in the Stripe Customer Portal updates
+      // the Stripe customer, not our donors table — and the letter queue reads
+      // ours. Without this the portal would silently send Mona's letter to an
+      // address the donor had already corrected, which is worse than not
+      // offering the portal at all.
+      //
+      // Only fields the donor can actually edit there are copied, and only
+      // onto a donor we already know by stripe_customer_id.
+      const customer = stripeEvent.data.object as Stripe.Customer;
+      const a = customer.address;
+      await turso.execute({
+        sql: `UPDATE donors SET
+                first_name = COALESCE(NULLIF(?, ''), first_name),
+                last_name  = COALESCE(NULLIF(?, ''), last_name),
+                email      = COALESCE(NULLIF(?, ''), email),
+                phone      = COALESCE(NULLIF(?, ''), phone),
+                street     = COALESCE(NULLIF(?, ''), street),
+                city       = COALESCE(NULLIF(?, ''), city),
+                state      = COALESCE(NULLIF(?, ''), state),
+                zip        = COALESCE(NULLIF(?, ''), zip)
+              WHERE stripe_customer_id = ?`,
+        args: [
+          (customer.name ?? '').trim().split(/\s+/).slice(0, -1).join(' '),
+          (customer.name ?? '').trim().split(/\s+/).slice(-1).join(''),
+          (customer.email ?? '').trim().toLowerCase(),
+          (customer.phone ?? '').trim(),
+          (a?.line1 ?? '').trim(),
+          (a?.city ?? '').trim(),
+          (a?.state ?? '').trim(),
+          (a?.postal_code ?? '').trim(),
+          customer.id,
+        ],
+      });
+      return {
+        statusCode: 200,
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ received: true, type: stripeEvent.type, synced: true }),
+      };
     } else {
       return {
         statusCode: 200,

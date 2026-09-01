@@ -61,6 +61,11 @@ const fallbackColumns: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: 'Volunteer', href: '/forms/volunteer' },
       { label: 'Referral', href: '/forms/referral' },
+      // Stripe's hosted portal for monthly donors: change a card, adjust the
+      // amount, or stop a gift without having to ask anyone. Safe to link
+      // publicly — it mails a sign-in link, so it only ever shows someone
+      // their own record. SmartLink opens it in a new tab.
+      { label: 'Donor Portal', href: 'https://billing.stripe.com/p/login/4gwdUFcVI6nF4cEbII' },
     ],
   },
 ];
