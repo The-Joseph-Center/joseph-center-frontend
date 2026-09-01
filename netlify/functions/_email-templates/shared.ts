@@ -42,38 +42,55 @@ function previewMeta(previewText: string): string {
   return `<div style="display:none;font-size:1px;color:#fff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${escapeHtml(previewText)}</div>`;
 }
 
-const FOOTER_HTML = `
+// The tax line is opt-in, not automatic. It used to sit in the shared footer,
+// which meant a volunteer who had never given a penny was told their gift might
+// be tax-deductible. Only the donation templates pass taxLine.
+//
+// Address and phone are explicit links in the brand colour because Gmail
+// autolinks both whether or not we do. Left alone it styles them as default
+// blue underlined, which is what the screenshots showed; claiming them first
+// keeps the footer in the palette.
+const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(BRAND.address1)}`;
+const telHref = `tel:+1${BRAND.phone.replace(/\D/g, '')}`;
+const footerLink = (href: string, label: string) =>
+  `<a href="${href}" style="color:${BRAND.primary};text-decoration:none;">${label}</a>`;
+
+function footerHtml(taxLine: boolean): string {
+  return `
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #e7e1d3;margin-top:32px;">
   <tr>
     <td style="padding:24px 32px;font-family:${SYSTEM_FONT_STACK};font-size:13px;color:${BRAND.textMuted};line-height:1.55;">
       <strong style="color:${BRAND.textBody};">${BRAND.name}</strong><br>
-      ${BRAND.address1}<br>
-      ${BRAND.phone} &middot; <a href="mailto:${BRAND.email}" style="color:${BRAND.primary};text-decoration:none;">${BRAND.email}</a><br>
-      <a href="https://${BRAND.website}" style="color:${BRAND.primary};text-decoration:none;">${BRAND.website}</a>
+      ${footerLink(mapsUrl, BRAND.address1)}<br>
+      ${footerLink(telHref, BRAND.phone)} &middot; ${footerLink(`mailto:${BRAND.email}`, BRAND.email)}<br>
+      ${footerLink(`https://${BRAND.website}`, BRAND.website)}
       <br><br>
-      The Joseph Center is a 501(c)(3) nonprofit organization.<br>
-      Your gift may be tax-deductible to the extent permitted by law.
+      The Joseph Center is a 501(c)(3) nonprofit organization.${taxLine ? '<br>Your gift may be tax-deductible to the extent permitted by law.' : ''}
       <br><br>
-      <span style="color:#9a9a9a;">&copy; 2026 The Joseph Center. All rights reserved.</span>
+      <span style="color:#9a9a9a;">&copy; ${new Date().getFullYear()} The Joseph Center. All rights reserved.</span>
     </td>
   </tr>
 </table>
 `.trim();
+}
 
-const FOOTER_TEXT = `
+function footerText(taxLine: boolean): string {
+  return `
 ${BRAND.name}
 ${BRAND.address1}
 ${BRAND.phone} | ${BRAND.email}
 ${BRAND.website}
 
-The Joseph Center is a 501(c)(3) nonprofit organization.
-Your gift may be tax-deductible to the extent permitted by law.
+The Joseph Center is a 501(c)(3) nonprofit organization.${taxLine ? '\nYour gift may be tax-deductible to the extent permitted by law.' : ''}
 
-© 2026 The Joseph Center. All rights reserved.
+© ${new Date().getFullYear()} The Joseph Center. All rights reserved.
 `.trim();
+}
 
 interface ShellOpts {
   previewText?: string;
+  /** Adds the tax-deductibility line to the footer. Donation emails only. */
+  taxLine?: boolean;
   // Inner HTML for the body — caller provides paragraph and table markup.
   bodyHtml: string;
   // Banner color override (defaults to primary). e.g. gold for staff alerts.
@@ -92,6 +109,8 @@ export function renderShell(opts: ShellOpts): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>${escapeHtml(label)}</title>
 </head>
 <body style="margin:0;padding:0;background:${BRAND.bg};font-family:${SYSTEM_FONT_STACK};color:${BRAND.textBody};">
@@ -111,7 +130,7 @@ ${previewMeta(opts.previewText ?? '')}
           </td>
         </tr>
         <tr>
-          <td>${FOOTER_HTML}</td>
+          <td>${footerHtml(opts.taxLine ?? false)}</td>
         </tr>
       </table>
     </td>
@@ -121,8 +140,8 @@ ${previewMeta(opts.previewText ?? '')}
 </html>`;
 }
 
-export function wrapText(content: string): string {
-  return `${content.trim()}\n\n--\n\n${FOOTER_TEXT}\n`;
+export function wrapText(content: string, taxLine = false): string {
+  return `${content.trim()}\n\n--\n\n${footerText(taxLine)}\n`;
 }
 
 // ─── Inline-style helpers ────────────────────────────────────────────────

@@ -63,11 +63,11 @@ Mona Highline
 Founder & CEO, The Joseph Center
 
 No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.
-  `);
+  `, true);
 
   return {
     subject: 'Your gift to The Joseph Center',
-    html: renderShell({ previewText: `Your gift of ${amount} just made a real difference.`, bodyHtml }),
+    html: renderShell({ previewText: `Your gift of ${amount} just made a real difference.`, bodyHtml, taxLine: true }),
     text,
   };
 }

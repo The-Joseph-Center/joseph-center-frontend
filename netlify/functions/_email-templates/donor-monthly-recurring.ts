@@ -53,11 +53,11 @@ With gratitude,
 The Joseph Center
 
 No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.
-  `);
+  `, true);
 
   return {
     subject: 'Your monthly gift — The Joseph Center',
-    html: renderShell({ previewText: `Your monthly gift of ${amount} has been processed.`, bodyHtml }),
+    html: renderShell({ previewText: `Your monthly gift of ${amount} has been processed.`, bodyHtml, taxLine: true }),
     text,
   };
 }
