@@ -318,8 +318,18 @@ export const handler: Handler = async (event) => {
       }),
     };
   } catch (err) {
+    // The full error goes to the log; the donor gets a sentence they can act on.
+    //
+    // This previously returned Stripe's own message, which on launch day put
+    // "Expired API Key provided: sk_live_****09kho2" in front of donors. A
+    // partially masked key is still more than anyone outside the org should
+    // see, and a donor cannot do anything with it — the useful part for them is
+    // that it is our problem and their card was not charged.
     console.error('create-donation-session error:', err);
-    const message = err instanceof Error ? err.message : 'Failed to create donation';
-    return jsonError(500, message);
+    return jsonError(
+      500,
+      'Something went wrong setting up your gift, and your card has not been charged. ' +
+      'Please try again in a few minutes — or call us on (970) 245-7672 and we will gladly take it by phone.'
+    );
   }
 };
