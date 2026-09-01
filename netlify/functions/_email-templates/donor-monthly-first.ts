@@ -1,6 +1,6 @@
 import {
   RenderedEmail, renderShell, wrapText, h1, p, summaryTable, button, signature, muted,
-  formatCurrency, formatDate, escapeHtml, ordinal,
+  formatCurrency, formatDate, escapeHtml, ordinal, BRAND
 } from './shared';
 
 export interface DonorMonthlyFirstVars {
@@ -45,7 +45,7 @@ ${p(`Your first gift of <strong>${amount}</strong> has been processed, and you'l
 ${summaryTable(summaryRows)}
 ${receiptBtn}
 ${p('Monthly partners are the reason The Joseph Center can plan ahead — hire staff, stock the pantry, keep the lights on. You\'re part of what makes that possible.')}
-${p('To update your payment method or make changes to your recurring gift, reply to this email or contact us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a>.')}
+${p('Manage your monthly gift — change your card, adjust the amount, or stop it — any time in the <a href="' + BRAND.portalUrl + '" style="color:#1B4D4A;text-decoration:underline;">donor portal</a>. Enter your email there and Stripe sends you a sign-in link. For anything else, including a change of mailing address, reply to this email or contact us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a>.')}
 ${mailingNote}
 ${signature({ name: 'Mona Highline', title: 'Founder & CEO, The Joseph Center' })}
 ${muted('No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.')}
@@ -66,7 +66,7 @@ Gift summary
 
 ${v.stripeReceiptUrl ? `View your Stripe receipt: ${v.stripeReceiptUrl}\n\n` : ''}Monthly partners are the reason The Joseph Center can plan ahead — hire staff, stock the pantry, keep the lights on. You're part of what makes that possible.
 
-To update your payment method or make changes to your recurring gift, reply to this email or contact us at jc@josephcentergj.com.
+Manage your monthly gift — change your card, adjust the amount, or stop it — any time in the donor portal: ${BRAND.portalUrl}\nEnter your email there and Stripe sends you a sign-in link.\n\nFor anything else, including a change of mailing address, reply to this email or contact us at jc@josephcentergj.com.
 ${v.hasMailingAddress ? '\nWatch your mailbox — Mona will be sending you a personal note.\n' : ''}
 With gratitude,
 Mona Highline

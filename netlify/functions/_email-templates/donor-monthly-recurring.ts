@@ -1,6 +1,6 @@
 import {
   RenderedEmail, renderShell, wrapText, h1, p, summaryTable, button, muted,
-  formatCurrency, formatDate, escapeHtml, ordinal,
+  formatCurrency, formatDate, escapeHtml, ordinal, BRAND
 } from './shared';
 
 export interface DonorMonthlyRecurringVars {
@@ -32,7 +32,7 @@ ${h1(`Thanks for showing up again, ${escapeHtml(v.firstName)}.`)}
 ${p(`Your monthly gift of <strong>${amount}</strong> to The Joseph Center has been processed.`)}
 ${summaryTable(summaryRows)}
 ${receiptBtn}
-${p('To update your payment method or make changes to your recurring gift, reply to this email or contact us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a>.')}
+${p('Manage your monthly gift — change your card, adjust the amount, or stop it — any time in the <a href="' + BRAND.portalUrl + '" style="color:#1B4D4A;text-decoration:underline;">donor portal</a>. Enter your email there and Stripe sends you a sign-in link. For anything else, including a change of mailing address, reply to this email or contact us at <a href="mailto:jc@josephcentergj.com" style="color:#1B4D4A;text-decoration:underline;">jc@josephcentergj.com</a>.')}
 ${muted('No goods or services were provided in exchange for this contribution. Please retain this email for your tax records.')}
 `.trim();
 
@@ -47,7 +47,7 @@ Gift summary
 - Next charge: ${dayOfMonth} of next month
 - Total charged: ${total}
 
-${v.stripeReceiptUrl ? `View your Stripe receipt: ${v.stripeReceiptUrl}\n\n` : ''}To update your payment method or make changes to your recurring gift, reply to this email or contact us at jc@josephcentergj.com.
+${v.stripeReceiptUrl ? `View your Stripe receipt: ${v.stripeReceiptUrl}\n\n` : ''}Manage your monthly gift — change your card, adjust the amount, or stop it — any time in the donor portal: ${BRAND.portalUrl}\nEnter your email there and Stripe sends you a sign-in link.\n\nFor anything else, including a change of mailing address, reply to this email or contact us at jc@josephcentergj.com.
 
 With gratitude,
 The Joseph Center

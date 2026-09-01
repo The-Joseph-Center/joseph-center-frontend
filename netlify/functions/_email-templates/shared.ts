@@ -12,6 +12,16 @@ export const BRAND = {
   phone: '(970) 245-7672',
   email: 'jc@josephcentergj.com',
   website: 'josephcentergj.com',
+  /**
+   * Stripe's hosted Customer Portal login page for the Joseph Center account.
+   *
+   * Safe to publish: it asks for an email address and mails a sign-in link, so
+   * it only ever shows a donor their own record. Donors use it to change their
+   * card, change the amount, or stop a monthly gift without having to ask
+   * anyone. Every one of the 24 active recurring donors has an email on their
+   * Stripe customer record, so every one of them can get in.
+   */
+  portalUrl: 'https://billing.stripe.com/p/login/4gwdUFcVI6nF4cEbII',
   // Brand palette per the email spec
   primary: '#1B4D4A',
   accent: '#C49A2B',
