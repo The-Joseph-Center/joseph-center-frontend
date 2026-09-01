@@ -8,6 +8,10 @@ export interface DonorMonthlyFirstVars {
   amountCents: number;
   totalChargedCents: number;
   feeCovered: boolean;
+  /** Accepted for the caller's convenience, deliberately not shown.
+   *  Gifts are received as general operating support, so naming a
+   *  programme in the receipt would read as a restriction on the gift.
+   *  The staff notification still carries it — that is attribution. */
   campaignName?: string | null;
   hasMailingAddress: boolean;
   stripeReceiptUrl?: string | null;
@@ -29,9 +33,6 @@ export function donorMonthlyFirst(v: DonorMonthlyFirstVars): RenderedEmail {
   if (v.feeCovered) summaryRows.push({ label: 'Processing fee', value: 'Covered by you — thank you.' });
   summaryRows.push({ label: 'Total charged today', value: total });
 
-  const campaignBlock = v.campaignName
-    ? p(`Your giving supports: <strong>${escapeHtml(v.campaignName)}</strong>`)
-    : '';
   const receiptBtn = v.stripeReceiptUrl ? button('View your Stripe receipt', v.stripeReceiptUrl) : '';
   const mailingNote = v.hasMailingAddress
     ? p('Watch your mailbox — Mona will be sending you a personal note.')
@@ -41,7 +42,6 @@ export function donorMonthlyFirst(v: DonorMonthlyFirstVars): RenderedEmail {
 ${h1(`Welcome, ${escapeHtml(v.firstName)}.`)}
 ${p(`You're now a monthly partner of The Joseph Center. That means a lot.`)}
 ${p(`Your first gift of <strong>${amount}</strong> has been processed, and you'll be charged on the <strong>${dayOfMonth}</strong> of each month going forward.`)}
-${campaignBlock}
 ${summaryTable(summaryRows)}
 ${receiptBtn}
 ${p('Monthly partners are the reason The Joseph Center can plan ahead — hire staff, stock the pantry, keep the lights on. You\'re part of what makes that possible.')}
@@ -58,7 +58,7 @@ You're now a monthly partner of The Joseph Center. That means a lot.
 
 Your first gift of ${amount} has been processed, and you'll be charged on the ${dayOfMonth} of each month going forward.
 
-${v.campaignName ? `Your giving supports: ${v.campaignName}\n\n` : ''}Gift summary
+Gift summary
 - Amount: ${amount}/month
 - First charge: ${dateStr}
 - Next charge: ${dayOfMonth} of each month${v.feeCovered ? `\n- Processing fee: Covered by you — thank you.` : ''}

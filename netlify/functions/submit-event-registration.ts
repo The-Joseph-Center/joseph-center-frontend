@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions';
 import { createClient as createSanityClient } from '@sanity/client';
 import { createClient as createTursoClient } from '@libsql/client/web';
 import { Resend } from 'resend';
+import { eventRegistration } from './_email-templates/event-registration';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -41,7 +42,7 @@ export const handler: Handler = async (event) => {
 
     // Fetch event to validate registration config
     const ev = await sanity.fetch(
-      `*[_type == "event" && slug.current == $slug][0]{ title, registration }`,
+      `*[_type == "event" && slug.current == $slug][0]{ title, date, location, registration }`,
       { slug: eventSlug }
     );
 
@@ -85,12 +86,31 @@ export const handler: Handler = async (event) => {
       console.error('submit-event-registration: failed to persist the event registration:', dbErr);
     }
 
-    // Confirmation
+    // Confirmation. The location is portable text in Sanity; flatten it to the
+    // lines a person would read rather than sending block objects.
+    const location = Array.isArray(ev.location)
+      ? ev.location
+          .map((b: { children?: { text?: string }[] }) =>
+            (b.children ?? []).map((c) => c.text ?? '').join(''))
+          .map((line: string) => line.trim())
+          .filter(Boolean)
+          .join(', ')
+      : null;
+
+    const mail = eventRegistration({
+      firstName,
+      eventTitle: ev.title,
+      eventDate: ev.date ?? null,
+      location: location || null,
+      partySize: Number(partySize) || 1,
+    });
+
     await resend.emails.send({
       from: process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev',
       to: [email],
-      subject: `You're registered for ${ev.title}`,
-      text: `Hi ${firstName},\n\nYou're confirmed for ${ev.title}. We'll see you there!`,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
     });
 
     return { statusCode: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: true }) };

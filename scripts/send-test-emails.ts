@@ -10,6 +10,7 @@
  * Run from frontend/:
  *   npx tsx scripts/send-test-emails.ts                      # list, send nothing
  *   TO=someone@example.com APPLY=yes npx tsx scripts/send-test-emails.ts
+ *   ONLY=event,one-time ...   # only those whose label matches, for re-checks
  */
 import fs from 'node:fs';
 import { Resend } from 'resend';
@@ -19,6 +20,7 @@ import { donorMonthlyRecurring } from '../netlify/functions/_email-templates/don
 import { volunteerConfirmation } from '../netlify/functions/_email-templates/volunteer-confirmation';
 import { staffDonation } from '../netlify/functions/_email-templates/staff-donation';
 import { staffVolunteer } from '../netlify/functions/_email-templates/staff-volunteer';
+import { eventRegistration } from '../netlify/functions/_email-templates/event-registration';
 
 const APPLY = process.env.APPLY === 'yes';
 const TO = process.env.TO;
@@ -85,18 +87,34 @@ const emails = [
       message: 'Happy to help wherever the need is greatest.',
     }),
   },
+  {
+    who: 'Event — registration confirmed',
+    from: env.CONTACT_FROM_EMAIL,
+    ...eventRegistration({
+      firstName: 'Eric',
+      eventTitle: '2nd Annual Food Truck Fundraiser',
+      eventDate: new Date(Date.now() + 21 * 86400000).toISOString(),
+      location: '2511 Belford Ave #B, Grand Junction, CO 81501',
+      partySize: 2,
+    }),
+  },
 ];
 
 async function run() {
-  console.log(`${APPLY ? `SENDING to ${TO}` : 'DRY RUN'} — ${emails.length} branded templates\n`);
-  for (const e of emails) console.log(`  ${e.who.padEnd(32)} ${e.subject}`);
+  const only = (process.env.ONLY ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const chosen = only.length
+    ? emails.filter((e) => only.some((o) => e.who.toLowerCase().includes(o)))
+    : emails;
+
+  console.log(`${APPLY ? `SENDING to ${TO}` : 'DRY RUN'} — ${chosen.length} branded templates\n`);
+  for (const e of chosen) console.log(`  ${e.who.padEnd(32)} ${e.subject}`);
 
   if (!APPLY) { console.log('\nDry run. Re-run with TO=<address> APPLY=yes to send.'); return; }
   if (!TO) { console.error('\nTO is required when APPLY=yes.'); process.exit(1); }
 
   const resend = new Resend(env.RESEND_API_KEY!);
   let sent = 0;
-  for (const e of emails) {
+  for (const e of chosen) {
     const { data, error } = await resend.emails.send({
       from: e.from!, to: [TO], subject: e.subject, html: e.html, text: e.text,
     });
@@ -106,7 +124,7 @@ async function run() {
     // Resend's default rate limit is 2 requests/second.
     await new Promise((r) => setTimeout(r, 600));
   }
-  console.log(`\n  ${sent}/${emails.length} delivered to Resend.`);
+  console.log(`\n  ${sent}/${chosen.length} delivered to Resend.`);
 }
 
 run().catch((e) => { console.error(e); process.exit(1); });

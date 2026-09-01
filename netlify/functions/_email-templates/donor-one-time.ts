@@ -8,6 +8,10 @@ export interface DonorOneTimeVars {
   amountCents: number;
   totalChargedCents: number;
   feeCovered: boolean;
+  /** Accepted for the caller's convenience, deliberately not shown.
+   *  Gifts are received as general operating support, so naming a
+   *  programme in the receipt would read as a restriction on the gift.
+   *  The staff notification still carries it — that is attribution. */
   campaignName?: string | null;
   hasMailingAddress: boolean;
   stripeReceiptUrl?: string | null;
@@ -26,9 +30,6 @@ export function donorOneTime(v: DonorOneTimeVars): RenderedEmail {
   if (v.feeCovered) summaryRows.push({ label: 'Processing fee', value: 'Covered by you — thank you.' });
   summaryRows.push({ label: 'Total charged', value: total });
 
-  const campaignBlock = v.campaignName
-    ? p(`Your gift supports: <strong>${escapeHtml(v.campaignName)}</strong>`)
-    : '';
   const receiptBtn = v.stripeReceiptUrl ? button('View your Stripe receipt', v.stripeReceiptUrl) : '';
   const mailingNote = v.hasMailingAddress
     ? p('And watch your mailbox — Mona will be sending you a personal note.')
@@ -37,7 +38,6 @@ export function donorOneTime(v: DonorOneTimeVars): RenderedEmail {
   const bodyHtml = `
 ${h1(`Thank you, ${escapeHtml(v.firstName)}.`)}
 ${p(`Your gift of <strong>${amount}</strong> just made a real difference for someone on the Western Slope.`)}
-${campaignBlock}
 ${summaryTable(summaryRows)}
 ${receiptBtn}
 ${p('The Joseph Center is 100% community and foundation funded. Gifts like yours are the only reason our doors stay open.')}
@@ -51,7 +51,7 @@ Hi ${v.firstName},
 
 Your gift of ${amount} just made a real difference for someone on the Western Slope.
 
-${v.campaignName ? `Your gift supports: ${v.campaignName}\n\n` : ''}Gift summary
+Gift summary
 - Amount: ${amount}
 - Date: ${date}${v.feeCovered ? `\n- Processing fee: Covered by you — thank you.` : ''}
 - Total charged: ${total}
