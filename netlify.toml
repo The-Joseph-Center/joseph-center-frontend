@@ -27,6 +27,27 @@
   status = 301
   force = true
 
+# A memorable address for the Stripe donor portal, so the link in emails and
+# the footer is ours rather than a 40-character Stripe URL nobody can read out
+# over the phone. 302 rather than 301: the Stripe login URL can change, and a
+# permanently cached redirect to a dead one would be unfixable for anyone who
+# had already followed it.
+#
+# The browser does land on billing.stripe.com, which is the right outcome —
+# people expect to see Stripe when money is involved, and a payment page on a
+# domain that only looks like Stripe is the shape of a phishing site.
+[[redirects]]
+  from = "/portal"
+  to = "https://billing.stripe.com/p/login/4gwdUFcVI6nF4cEbII"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/donor-portal"
+  to = "https://billing.stripe.com/p/login/4gwdUFcVI6nF4cEbII"
+  status = 302
+  force = true
+
 # SPA catch-all — keep last so specific redirects above win
 [[redirects]]
   from = "/*"
