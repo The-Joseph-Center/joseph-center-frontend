@@ -10,8 +10,8 @@
  * nothing local ever resolved that import. This runs the same bundle step
  * Netlify runs, locally, before the deploy can be reached.
  *
- * esbuild is already present as a Vite dependency, and bundling the functions
- * takes well under a second.
+ * esbuild is a declared devDependency, not borrowed from Vite's tree. Relying
+ * on it transitively resolved locally and was absent from a clean CI install.
  */
 import { build } from 'esbuild';
 import { readdirSync } from 'node:fs';
