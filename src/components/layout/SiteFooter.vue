@@ -65,7 +65,11 @@ const fallbackColumns: { title: string; links: FooterLink[] }[] = [
       // amount, or stop a gift without having to ask anyone. Safe to link
       // publicly — it mails a sign-in link, so it only ever shows someone
       // their own record. SmartLink opens it in a new tab.
-      { label: 'Donor Portal', href: '/portal' },
+      // Absolute, not "/portal". SmartLink treats a path without a scheme as
+      // internal and renders a RouterLink, so a relative link would navigate
+      // client-side to a route that does not exist and land on the 404 page —
+      // the Netlify redirect only fires on a real request to the server.
+      { label: 'Donor Portal', href: 'https://josephcentergj.com/portal' },
     ],
   },
 ];
