@@ -21,7 +21,10 @@ export const BRAND = {
    * anyone. Every one of the 24 active recurring donors has an email on their
    * Stripe customer record, so every one of them can get in.
    */
-  portalUrl: 'https://billing.stripe.com/p/login/4gwdUFcVI6nF4cEbII',
+  // Our own address, redirected to Stripe's portal login by netlify.toml. One
+  // place to change if Stripe ever rotates that URL, and short enough for a
+  // staff member to read out over the phone.
+  portalUrl: 'https://josephcentergj.com/portal',
   // Brand palette per the email spec
   primary: '#1B4D4A',
   accent: '#C49A2B',

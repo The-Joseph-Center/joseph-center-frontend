@@ -460,8 +460,8 @@ watch(campaignSlug, loadContext);
         <div class="address-block">
           <p class="address-block__lead">Mona writes to every donor by hand.</p>
           <p class="address-block__sub">
-            Add your address and one will be on its way. Optional — leave it blank
-            and nothing else changes.
+            Add your address and one will be on its way. Still optional — but it is
+            the only way we can send it.
           </p>
         <div class="form-field">
           <label class="form-label" for="don-street">Street Address</label>
