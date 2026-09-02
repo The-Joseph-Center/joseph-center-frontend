@@ -118,15 +118,16 @@ export const useSiteStore = defineStore('site', {
       return (this.headerNav ?? []).map((item) => {
         if (item.label !== 'Partner With Us' || !item.children) return item;
         if (item.children.some((c) => c.label === 'Donor Portal')) return item;
-        const children = [...item.children];
-        // Directly after Donate: both are about giving, and someone looking for
-        // one is often looking for the other.
-        const at = children.findIndex((c) => c.label === 'Donate');
-        children.splice(at === -1 ? 0 : at + 1, 0, {
+        // Last in the group, deliberately not under Donate. They look alike and
+        // are opposite actions: Donate is for anyone, the portal is account
+        // management for people who already give. Sitting together, the pair
+        // reads like a sign-in wall in front of giving, and a first-time
+        // visitor scanning for "Donate" can land on the wrong one.
+        const children = [...item.children, {
           label: 'Donor Portal',
           href: portal,
           isExternal: true,
-        });
+        }];
         return { ...item, children };
       });
     },
