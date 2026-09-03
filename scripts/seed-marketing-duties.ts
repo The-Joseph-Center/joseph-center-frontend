@@ -1,12 +1,17 @@
 /**
  * Seeds marketing_duties from jc_marketing_recurring_duties.json.
  *
- * Safe to re-run whenever the file changes. Reference fields — the task, its
- * category, cadence, priority, owner, notes — are owned by the file and are
- * overwritten every time. `status` is NOT, once a person has changed it:
- * re-seeding a roster should not quietly undo somebody's progress. A row whose
- * status has never been touched takes the file's value, so a corrected starting
- * status does land.
+ * Safe to re-run whenever the file changes. The wording, category, cadence,
+ * priority and notes are owned by the file and overwritten every time.
+ *
+ * Two groups of fields are not, once a person has changed them:
+ *   • `status`
+ *   • `owner`, `owner_names` and `access_group`
+ *
+ * Both are what the list exists to settle, and re-seeding a roster must not
+ * quietly undo somebody's decision or hand a duty back to whoever the
+ * spreadsheet last named. A row nobody has touched takes the file's values, so
+ * a correction in the file still lands.
  *
  * The script refuses to seed a duty whose access_group is not in the `duties`
  * capability, because such a row is invisible to everyone except an admin and
@@ -61,8 +66,11 @@ async function run() {
 
   const db = createClient({ url: env.TURSO_DATABASE_URL!, authToken: env.TURSO_AUTH_TOKEN! });
   const before = (await db.execute('SELECT COUNT(*) n FROM marketing_duties')).rows[0] as Record<string, unknown>;
-  const touched = (await db.execute('SELECT COUNT(*) n FROM marketing_duties WHERE status_updated_at IS NOT NULL')).rows[0] as Record<string, unknown>;
-  console.log(`\n  table holds ${before.n} row(s); ${touched.n} have a human-set status that will be kept.`);
+  const touchedStatus = (await db.execute('SELECT COUNT(*) n FROM marketing_duties WHERE status_updated_at IS NOT NULL')).rows[0] as Record<string, unknown>;
+  const touchedOwner = (await db.execute('SELECT COUNT(*) n FROM marketing_duties WHERE owner_updated_at IS NOT NULL')).rows[0] as Record<string, unknown>;
+  console.log(`\n  table holds ${before.n} row(s).`);
+  console.log(`  ${touchedStatus.n} have a human-set status that will be kept.`);
+  console.log(`  ${touchedOwner.n} have a human-set owner that will be kept.`);
 
   if (!APPLY) { console.log('\nDry run — nothing written. Re-run with APPLY=yes.'); return; }
 
@@ -74,12 +82,18 @@ async function run() {
           ON CONFLICT(id) DO UPDATE SET
             task = excluded.task, category = excluded.category,
             cadence = excluded.cadence, priority = excluded.priority,
-            owner = excluded.owner, owner_names = excluded.owner_names,
-            title_role = excluded.title_role, access_group = excluded.access_group,
+            title_role = excluded.title_role,
             notes = excluded.notes, source = excluded.source,
             -- Keep a status somebody has set; take the file's otherwise.
             status = CASE WHEN marketing_duties.status_updated_at IS NULL
-                          THEN excluded.status ELSE marketing_duties.status END`,
+                          THEN excluded.status ELSE marketing_duties.status END,
+            -- Same for ownership, which is the whole point of the exercise.
+            owner = CASE WHEN marketing_duties.owner_updated_at IS NULL
+                         THEN excluded.owner ELSE marketing_duties.owner END,
+            owner_names = CASE WHEN marketing_duties.owner_updated_at IS NULL
+                               THEN excluded.owner_names ELSE marketing_duties.owner_names END,
+            access_group = CASE WHEN marketing_duties.owner_updated_at IS NULL
+                                THEN excluded.access_group ELSE marketing_duties.access_group END`,
     args: [
       d.id, d.task, d.category, d.cadence, d.priority, d.status,
       d.owner ?? null, JSON.stringify(d.owner_names ?? []),
