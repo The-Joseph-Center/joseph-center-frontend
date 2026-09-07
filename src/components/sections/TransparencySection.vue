@@ -34,6 +34,12 @@ interface Section {
   valueFormat?: 'percent' | 'currency';
   allocations?: Allocation[] | null;
   allocationFootnote?: string;
+  // Second chart. Sources answer "where does the money come from"; this one
+  // answers "where does it go", which is the question donors actually ask.
+  spendingHeading?: string;
+  spendingPeriod?: string;
+  spending?: Allocation[] | null;
+  spendingFootnote?: string;
 }
 
 interface AnnualReport {
@@ -53,8 +59,6 @@ const intro = computed(
     'The Joseph Center is 100% community & foundation funded. Here is how your giving is put to work.'
 );
 const chartHeading = computed(() => props.section?.allocationHeading || 'Where Your Gift Goes');
-const period = computed(() => props.section?.allocationPeriod?.trim() || '');
-const footnote = computed(() => props.section?.allocationFootnote?.trim() || '');
 const isCurrency = computed(() => props.section?.valueFormat === 'currency');
 
 // ── Slices ────────────────────────────────────────────────────────────────
@@ -68,13 +72,9 @@ interface Slice extends Allocation {
   step: number;   // 1–6, drives both the fill and its label ink via CSS vars
 }
 
-const total = computed(() =>
-  (props.section?.allocations ?? []).reduce((sum, a) => sum + (Number(a.value) || 0), 0)
-);
-
-const slices = computed<Slice[]>(() => {
-  const raw = (props.section?.allocations ?? []).filter((a) => a?.label && Number(a.value) > 0);
-  if (!raw.length || total.value <= 0) return [];
+function buildSlices(items: Allocation[], total: number): Slice[] {
+  const raw = items.filter((a) => a?.label && Number(a.value) > 0);
+  if (!raw.length || total <= 0) return [];
 
   const ranked = [...raw].sort((a, b) => Number(b.value) - Number(a.value));
 
@@ -94,11 +94,11 @@ const slices = computed<Slice[]>(() => {
 
   return working.map((a, i) => ({
     ...a,
-    share: (Number(a.value) / total.value) * 100,
+    share: (Number(a.value) / total) * 100,
     color: `var(--alloc-${i + 1})`,
     step: i + 1,
   }));
-});
+}
 
 // ── Donut geometry ────────────────────────────────────────────────────────
 const CX = 120;
@@ -135,10 +135,9 @@ interface Arc extends Slice {
   showInlineLabel: boolean;
 }
 
-const arcs = computed<Arc[]>(() => {
+function buildArcs(list: Slice[]): Arc[] {
   const out: Arc[] = [];
   let cursor = 0;
-  const list = slices.value;
   const gap = list.length > 1 ? GAP_DEG : 0;
 
   list.forEach((s, index) => {
@@ -158,28 +157,48 @@ const arcs = computed<Arc[]>(() => {
     });
   });
   return out;
-});
+}
 
-// A single 100% category can't be drawn as an arc — render a full ring.
-const isSingleSlice = computed(() => slices.value.length === 1);
-
-const hovered = ref<number | null>(null);
+// Hover is keyed by chart as well as slice, so pointing at a wedge in one
+// chart does not light up the same position in the other.
+const hovered = ref<string | null>(null);
 
 function fmtShare(share: number): string {
   return `${share >= 10 ? Math.round(share) : Math.round(share * 10) / 10}%`;
 }
-function fmtValue(v: number): string {
-  return isCurrency.value
+function fmtValue(v: number, currency: boolean): string {
+  return currency
     ? v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
     : `${Math.round(v * 10) / 10}%`;
 }
 
-const chartSummary = computed(() =>
-  slices.value.length
-    ? `Pie chart of how funds are allocated: ${slices.value
-        .map((s) => `${s.label}, ${fmtShare(s.share)}`)
-        .join('; ')}.`
-    : ''
+/** One rendered chart: everything the template needs, already computed. */
+function chartFrom(key: string, heading: string, items: Allocation[] | null | undefined,
+                   period?: string, footnote?: string) {
+  const list = items ?? [];
+  const total = list.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+  const slices = buildSlices(list, total);
+  return {
+    key, heading, total, slices,
+    period: (period ?? '').trim(),
+    footnote: (footnote ?? '').trim(),
+    isCurrency: isCurrency.value,
+    arcs: buildArcs(slices),
+    isSingleSlice: slices.length === 1,
+    summary: slices.length
+      ? `${heading}: ${slices.map((s) => `${s.label}, ${fmtShare(s.share)}`).join('; ')}.`
+      : '',
+  };
+}
+
+const charts = computed(() =>
+  [
+    chartFrom('sources', chartHeading.value, props.section?.allocations,
+              props.section?.allocationPeriod, props.section?.allocationFootnote),
+    chartFrom('spending', props.section?.spendingHeading || 'Where It Goes', props.section?.spending,
+              props.section?.spendingPeriod || props.section?.allocationPeriod,
+              props.section?.spendingFootnote),
+  ].filter((c) => c.slices.length)
 );
 
 // ── Annual reports ────────────────────────────────────────────────────────
@@ -199,8 +218,8 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
       <p class="transparency__intro">{{ intro }}</p>
 
       <!-- ── Fund allocation ─────────────────────────────────────────── -->
-      <div v-if="slices.length" class="alloc">
-        <h2 class="alloc__heading">{{ chartHeading }}</h2>
+      <div v-for="c in charts" :key="c.key" class="alloc">
+        <h2 class="alloc__heading">{{ c.heading }}</h2>
 
         <div class="alloc__body">
           <!-- Donut -->
@@ -209,37 +228,37 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
               class="alloc__svg"
               viewBox="0 0 240 240"
               role="img"
-              :aria-label="chartSummary"
+              :aria-label="c.summary"
             >
-              <template v-if="isSingleSlice">
+              <template v-if="c.isSingleSlice">
                 <circle
                   :cx="CX"
                   :cy="CY"
                   :r="(R_OUTER + R_INNER) / 2"
                   fill="none"
-                  :stroke="arcs[0]?.color"
+                  :stroke="c.arcs[0]?.color"
                   :stroke-width="R_OUTER - R_INNER"
                 />
               </template>
 
               <template v-else>
                 <path
-                  v-for="arc in arcs"
+                  v-for="arc in c.arcs"
                   :key="arc._key || arc.label"
                   :d="arc.d"
                   :fill="arc.color"
                   class="alloc__arc"
                   :class="{
-                    'alloc__arc--dim': hovered !== null && hovered !== arc.index,
+                    'alloc__arc--dim': hovered !== null && hovered !== `${c.key}:${arc.index}`,
                   }"
-                  @mouseenter="hovered = arc.index"
+                  @mouseenter="hovered = `${c.key}:${arc.index}`"
                   @mouseleave="hovered = null"
                 />
               </template>
 
               <!-- Direct labels on the slices big enough to hold one -->
               <text
-                v-for="arc in arcs"
+                v-for="arc in c.arcs"
                 :key="`t-${arc._key || arc.label}`"
                 v-show="arc.showInlineLabel"
                 :x="arc.mid.x"
@@ -252,24 +271,24 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
               >{{ fmtShare(arc.share) }}</text>
             </svg>
 
-            <figcaption v-if="period" class="alloc__period">{{ period }}</figcaption>
+            <figcaption v-if="c.period" class="alloc__period">{{ c.period }}</figcaption>
           </figure>
 
           <!-- Key -->
           <ul class="alloc__key">
             <li
-              v-for="arc in arcs"
+              v-for="arc in c.arcs"
               :key="`k-${arc._key || arc.label}`"
               class="alloc__key-item"
-              :class="{ 'alloc__key-item--active': hovered === arc.index }"
-              @mouseenter="hovered = arc.index"
+              :class="{ 'alloc__key-item--active': hovered === `${c.key}:${arc.index}` }"
+              @mouseenter="hovered = `${c.key}:${arc.index}`"
               @mouseleave="hovered = null"
             >
               <span class="alloc__swatch" :style="{ background: arc.color }" aria-hidden="true" />
               <span class="alloc__key-text">
                 <span class="alloc__key-label">{{ arc.label }}</span>
                 <span class="alloc__key-value">
-                  {{ fmtShare(arc.share) }}<template v-if="isCurrency"> · {{ fmtValue(arc.value) }}</template>
+                  {{ fmtShare(arc.share) }}<template v-if="c.isCurrency"> · {{ fmtValue(arc.value, c.isCurrency) }}</template>
                 </span>
                 <span v-if="arc.note" class="alloc__key-note">{{ arc.note }}</span>
               </span>
@@ -280,32 +299,32 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
         <details class="alloc__table-toggle">
           <summary>View these figures as a table</summary>
           <table class="alloc__table">
-            <caption class="sr-only">Fund allocation{{ period ? `, ${period}` : '' }}</caption>
+            <caption class="sr-only">{{ c.heading }}{{ c.period ? `, ${c.period}` : '' }}</caption>
             <thead>
               <tr>
                 <th scope="col">Category</th>
                 <th scope="col">Share</th>
-                <th scope="col">{{ isCurrency ? 'Amount' : 'Figure' }}</th>
+                <th scope="col">{{ c.isCurrency ? 'Amount' : 'Figure' }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="arc in arcs" :key="`r-${arc._key || arc.label}`">
+              <tr v-for="arc in c.arcs" :key="`r-${arc._key || arc.label}`">
                 <th scope="row">{{ arc.label }}</th>
                 <td>{{ fmtShare(arc.share) }}</td>
-                <td>{{ fmtValue(arc.value) }}</td>
+                <td>{{ fmtValue(arc.value, c.isCurrency) }}</td>
               </tr>
             </tbody>
-            <tfoot v-if="isCurrency">
+            <tfoot v-if="c.isCurrency">
               <tr>
                 <th scope="row">Total</th>
                 <td>100%</td>
-                <td>{{ fmtValue(total) }}</td>
+                <td>{{ fmtValue(c.total, c.isCurrency) }}</td>
               </tr>
             </tfoot>
           </table>
         </details>
 
-        <p v-if="footnote" class="alloc__footnote">{{ footnote }}</p>
+        <p v-if="c.footnote" class="alloc__footnote">{{ c.footnote }}</p>
       </div>
 
       <!-- ── Annual reports — renders only when reports exist ─────────── -->
@@ -339,6 +358,7 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
 </template>
 
 <style scoped>
+.alloc + .alloc { margin-top: 3rem; }
 /* Ordinal ramp — a single JC-green hue stepping dark→light by share, so the
    ranking is legible in the color itself. Generated in OKLCH at a constant
    hue with an even 0.074 lightness step, then verified: monotone lightness,
