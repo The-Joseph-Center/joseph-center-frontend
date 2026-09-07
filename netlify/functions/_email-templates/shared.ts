@@ -59,7 +59,7 @@ function previewMeta(previewText: string): string {
 // which meant a volunteer who had never given a penny was told their gift might
 // be tax-deductible. Only the donation templates pass taxLine.
 //
-// Address and phone are explicit links in the brand colour because Gmail
+// Address and phone are explicit links in the brand color because Gmail
 // autolinks both whether or not we do. Left alone it styles them as default
 // blue underlined, which is what the screenshots showed; claiming them first
 // keeps the footer in the palette.
@@ -173,7 +173,7 @@ export function muted(html: string): string {
 
 export function button(label: string, href: string): string {
   // The fill is declared three ways on purpose. White on #1B4D4A measures
-  // 9.52:1, so the colours were never the problem — the markup was. The cell
+  // 9.52:1, so the colors were never the problem — the markup was. The cell
   // carried `bgcolor` but no `background-color` in its style, and a client that
   // honours one and not the other, or that inverts them differently in dark
   // mode, left white text on a white button. Reported as almost unreadable.
@@ -181,7 +181,7 @@ export function button(label: string, href: string): string {
   // bgcolor covers the oldest clients, the inline background-color covers the
   // rest, and the border means that even if every fill is stripped the label
   // still sits inside a visible outline rather than vanishing. The anchor
-  // repeats the fill so the padded area is coloured even where the cell is not.
+  // repeats the fill so the padded area is colored even where the cell is not.
   const fill = BRAND.primary;
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
   <tr><td bgcolor="${fill}" style="background-color:${fill};border:1px solid ${fill};border-radius:4px;">

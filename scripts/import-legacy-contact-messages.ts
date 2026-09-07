@@ -44,10 +44,10 @@ const env = Object.fromEntries(
 );
 
 /**
- * The form's program list was re-labelled twice over four years, so the same
+ * The form's program list was re-labeled twice over four years, so the same
  * program appears under two names. Merging them is what makes the field worth
  * having — otherwise IFS looks like two smaller programs. Only unambiguous
- * pairs are merged; anything unrecognised passes through untouched.
+ * pairs are merged; anything unrecognized passes through untouched.
  */
 const PROGRAM_ALIASES: Record<string, string> = {
   'integrated financial services': 'Financial Services',
@@ -82,7 +82,7 @@ function parseCsv(text: string): string[][] {
 }
 
 async function run() {
-  // CRLF is normalised across the whole file before parsing: inside a quoted
+  // CRLF is normalized across the whole file before parsing: inside a quoted
   // message it is the writer's own line break and should be stored as \n, and
   // between records it is the separator. Either way the \r is noise.
   const text = fs.readFileSync(CSV, 'utf8').replace(/^\ufeff/, '').replace(/\r\n/g, '\n');

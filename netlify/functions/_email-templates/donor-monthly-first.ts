@@ -10,7 +10,7 @@ export interface DonorMonthlyFirstVars {
   feeCovered: boolean;
   /** Accepted for the caller's convenience, deliberately not shown.
    *  Gifts are received as general operating support, so naming a
-   *  programme in the receipt would read as a restriction on the gift.
+   *  program in the receipt would read as a restriction on the gift.
    *  The staff notification still carries it — that is attribution. */
   campaignName?: string | null;
   hasMailingAddress: boolean;

@@ -16,7 +16,7 @@
  *     label, not an answer worth reading 86 times.
  *   • the six day columns hold "9to12", "12to3" or "none". Days marked none
  *     are dropped rather than stored as a negative.
- *   • an employment slot whose organisation is blank or a placeholder ("n/a",
+ *   • an employment slot whose organization is blank or a placeholder ("n/a",
  *     "none") is not a job and is not kept.
  *
  * ip, user_agent and referrer are not imported, as with the contact archive.

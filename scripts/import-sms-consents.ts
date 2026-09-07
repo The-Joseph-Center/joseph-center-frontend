@@ -14,7 +14,7 @@
  * What is skipped, and why:
  *   • no phone number — nothing to text.
  *   • a number that is not a valid 10-digit US number. One is 9 digits, one is
- *     25, two carry a leading 1 (kept, normalised). A number that cannot be
+ *     25, two carry a leading 1 (kept, normalized). A number that cannot be
  *     dialled is not a subscriber, and guessing at a digit is worse than
  *     leaving it out.
  *   • a number already in sms_subscribers.
