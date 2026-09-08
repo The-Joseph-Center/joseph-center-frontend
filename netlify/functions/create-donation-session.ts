@@ -329,7 +329,7 @@ export const handler: Handler = async (event) => {
     return jsonError(
       500,
       'Something went wrong setting up your gift, and your card has not been charged. ' +
-      'Please try again in a few minutes — or call us on (970) 245-7672 and we will gladly take it by phone.'
+      'Please try again in a few minutes — or call us on (970) 245-4672 and we will gladly take it by phone.'
     );
   }
 };

@@ -72,7 +72,7 @@ const availableCategories = computed(() => {
       <p class="resources-page__intro">
         A collection of community resources available to guests and families in
         the Grand Valley. For help finding the right resource, contact The
-        Joseph Center at <a href="tel:+19702457672">(970) 245-7672</a>.
+        Joseph Center at <a href="tel:+19702454672">(970) 245-4672</a>.
       </p>
 
       <div v-if="!loading && availableCategories.length" class="resources-page__filters">

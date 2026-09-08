@@ -5,6 +5,7 @@ import SiteFooter from './SiteFooter.vue';
 import DonateFab from '@/components/donate/DonateFab.vue';
 import DonateModal from '@/components/donate/DonateModal.vue';
 import { useSeo } from '@/composables/useSeo';
+import { useVisualViewport } from '@/composables/useVisualViewport';
 import { useSanity } from '@/composables/useSanity';
 import { useSiteStore } from '@/stores/useSiteStore';
 import type { DonationConfig } from '@/types/site';
@@ -13,6 +14,10 @@ useSeo();
 
 // Fetch site settings and navigation from Sanity, sync into the Pinia store
 const site = useSiteStore();
+
+// Publishes the visible viewport so fixed chrome can follow a pinch-zoom
+// instead of anchoring to a layout viewport the reader can no longer see.
+useVisualViewport();
 
 // ── Site Settings ──
 import type { SanityImageSource } from '@/types/site';

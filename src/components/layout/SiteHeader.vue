@@ -208,11 +208,16 @@ onBeforeUnmount(() => {
 }
 
 /* ── Header bar (fixed, transparent over hero; bg fades to white on scroll) ── */
+/* While pinch-zoomed the header follows the visible viewport. Without this it
+   stays as wide as the unzoomed page, so most of it — including the menu
+   button — sits off-screen. --vv-* are published by useVisualViewport and are
+   simply absent on browsers that do not support it, where the fallbacks give
+   the previous behaviour. */
 .jc-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: var(--vv-top, 0px);
+  left: var(--vv-left, 0px);
+  width: var(--vv-width, 100%);
   height: var(--jc-nav-height);
   display: flex;
   justify-content: flex-end;
@@ -392,13 +397,29 @@ onBeforeUnmount(() => {
   outline-offset: 4px;
 }
 
-/* ── Full-screen menu (slides in from left) ──────────────────────────── */
-.jc-menu {
-  position: fixed;
+/* Zoomed in, release the pin. Tracking the visible viewport puts the header in
+   the right place, but its height is in CSS pixels and those magnify too — at
+   3× a 90px bar eats roughly a third of what the reader can see. Someone who
+   zooms wants the content, so the header scrolls away with it and comes back at
+   the top of the page. The menu overlay below keeps tracking, because when it
+   is open covering the screen is the entire point. */
+html[data-zoomed] .jc-header {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
+}
+
+/* ── Full-screen menu (slides in from left) ──────────────────────────── */
+.jc-menu {
+  position: fixed;
+  top: var(--vv-top, 0px);
+  left: var(--vv-left, 0px);
+  width: var(--vv-width, 100%);
+  /* dvh over vh so the mobile browser chrome is accounted for; --vv-height
+     takes over while zoomed, where both vh units still describe the full
+     layout height rather than what is on screen. */
+  height: var(--vv-height, 100dvh);
   background: var(--jc-darkgreen);
   z-index: 999;
   transform: translateX(-100%);

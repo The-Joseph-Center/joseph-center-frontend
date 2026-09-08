@@ -50,6 +50,8 @@ const visible = computed(() =>
 </template>
 
 <style scoped>
+/* Anchored to the visible viewport, not the layout one, so a pinch-zoom does
+   not park it somewhere the reader cannot reach. */
 .donate-fab {
   position: fixed;
   bottom: 1.25rem;
@@ -115,5 +117,16 @@ const visible = computed(() =>
   .donate-fab-leave-active {
     transition: none;
   }
+}
+
+/* Zoomed in, someone is reading. A floating button covering the text they
+   magnified to read is the opposite of helpful, so it steps aside — the Donate
+   links in the nav and footer are still there. */
+/* No :global() wrapper — Vue's scoped compiler drops the descendant part of
+   `:global(html[...]) .x`, which turned this into `html[data-zoomed]{display:none}`
+   and would have hidden the whole page on zoom. Written plainly, the scope
+   attribute lands on .donate-fab where it belongs. */
+html[data-zoomed] .donate-fab {
+  display: none;
 }
 </style>

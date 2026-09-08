@@ -228,7 +228,7 @@ async function handleSubmit() {
     submitted.value = true;
   } catch {
     stepError.value =
-      'Something went wrong. Please try again or contact us at (970) 245-7672.';
+      'Something went wrong. Please try again or contact us at (970) 245-4672.';
   } finally {
     submitting.value = false;
   }

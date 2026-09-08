@@ -9,7 +9,7 @@
 export const BRAND = {
   name: 'The Joseph Center',
   address1: '2511 Belford Ave #B, Grand Junction, CO 81501',
-  phone: '(970) 245-7672',
+  phone: '(970) 245-4672',
   email: 'jc@josephcentergj.com',
   website: 'josephcentergj.com',
   /**

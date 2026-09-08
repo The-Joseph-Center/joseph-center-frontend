@@ -8,7 +8,7 @@ export const useSiteStore = defineStore('site', {
     darkLogo: null,
     tagline: '',
     contactEmail: 'mhighline@josephcentergj.com',
-    contactPhone: '(970) 245-7672',
+    contactPhone: '(970) 245-4672',
     addressLine1: '2511 Belford Ave Ste B',
     addressLine2: 'Grand Junction, CO 81501',
     hours: {
