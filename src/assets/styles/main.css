@@ -407,12 +407,31 @@
    ============================================================ */
 
 @layer components {
+  /* Page zoom shrinks the layout viewport, so a nowrap label eventually cannot
+     fit however short it is. Below this width the label wraps and the side
+     padding tightens; above it, buttons behave exactly as before. */
+  @media (max-width: 450px) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline,
+    .btn-ghost {
+      white-space: normal;
+      padding-left: clamp(0.75rem, 5vw, 2rem);
+      padding-right: clamp(0.75rem, 5vw, 2rem);
+      text-align: center;
+    }
+  }
+
 
   /* ── Buttons ─────────────────────────────────────────── */
 
   /* Primary — green fill, white text */
   .btn-primary {
     display: inline-flex;
+    /* inline-flex sizes to its content, so without this a long label simply
+       grows past the viewport — "WATCH ALL EPISODES" needs 267px and page zoom
+       leaves 195px at 200%, which is the horizontal scroll. */
+    max-width: 100%;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
@@ -441,6 +460,10 @@
   /* Secondary — gold fill, dark text */
   .btn-secondary {
     display: inline-flex;
+    /* inline-flex sizes to its content, so without this a long label simply
+       grows past the viewport — "WATCH ALL EPISODES" needs 267px and page zoom
+       leaves 195px at 200%, which is the horizontal scroll. */
+    max-width: 100%;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
@@ -466,6 +489,10 @@
   /* Outline — green border, green text, transparent bg */
   .btn-outline {
     display: inline-flex;
+    /* inline-flex sizes to its content, so without this a long label simply
+       grows past the viewport — "WATCH ALL EPISODES" needs 267px and page zoom
+       leaves 195px at 200%, which is the horizontal scroll. */
+    max-width: 100%;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
@@ -517,6 +544,10 @@
      Use .btn-ghost--on-dark over a photo or a colored band. */
   .btn-ghost {
     display: inline-flex;
+    /* inline-flex sizes to its content, so without this a long label simply
+       grows past the viewport — "WATCH ALL EPISODES" needs 267px and page zoom
+       leaves 195px at 200%, which is the horizontal scroll. */
+    max-width: 100%;
     align-items: center;
     justify-content: center;
     padding: 0.75rem 2rem;
