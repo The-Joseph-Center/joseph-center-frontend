@@ -756,15 +756,23 @@
 
    Declared here rather than in ten page components: `.form-banner` is defined
    identically in all ten, and the #main-content prefix is what lets a global
-   rule outrank a scoped `.form-banner[data-v-…]`. */
+   rule outrank a scoped `.form-banner[data-v-…]`.
+
+   Three page-top banners share the same declarations — .form-banner across ten
+   pages, .donate-banner on /donate, and .transparency__banner — so all three
+   collide the same way and are corrected together. */
 @media (max-width: 700px) {
-  #main-content .form-banner {
+  #main-content .form-banner,
+  #main-content .donate-banner,
+  #main-content .transparency__banner {
     padding-left: 200px;
   }
 }
 
 @media (max-width: 450px) {
-  #main-content .form-banner {
+  #main-content .form-banner,
+  #main-content .donate-banner,
+  #main-content .transparency__banner {
     padding-left: 2rem;
     /* Coin reaches 150px and hangs 60px below the 90px mobile header. */
     padding-top: calc(1.25rem + 60px);
