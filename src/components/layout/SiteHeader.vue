@@ -203,8 +203,8 @@ onBeforeUnmount(() => {
   --jc-gold: var(--color-secondary, #CAA230);
   --jc-nav-height: 120px;
   --jc-nav-height-mobile: 90px;
-  --jc-lg-circle: 260px;
-  --jc-sm-circle: 200px;
+  /* --jc-lg-circle / --jc-sm-circle are set on :root in main.css, capped to a
+     share of the viewport so page zoom cannot let the coin take over. */
 }
 
 /* ── Header bar (fixed, transparent over hero; bg fades to white on scroll) ── */
@@ -256,16 +256,18 @@ onBeforeUnmount(() => {
 /* ── Concentric coin logo (3 rings + image) ──────────────────────────── */
 .jc-coin {
   position: absolute;
-  top: -70px;
-  left: -70px;
+  /* Offsets scale with the ring, so the visible reach stays a constant share
+     of the coin rather than the corner swallowing it at small sizes. */
+  top: calc(var(--jc-lg-circle) * -0.27);
+  left: calc(var(--jc-lg-circle) * -0.27);
   display: block;
   text-decoration: none;
 }
 
 @media (max-width: 450px) {
   .jc-coin {
-    top: -50px;
-    left: -50px;
+    top: calc(var(--jc-sm-circle) * -0.25);
+    left: calc(var(--jc-sm-circle) * -0.25);
   }
 }
 

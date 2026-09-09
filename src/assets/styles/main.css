@@ -737,6 +737,34 @@
   .prose-cta a { color: var(--color-primary); text-decoration: underline; }
 }
 
+/* ── Corner coin geometry ────────────────────────────────────────────────
+   The coin was a fixed 260/200px however narrow the viewport got, so its share
+   of the screen grew as the viewport shrank: 38% of a 390px phone, 58% once
+   the browser's page zoom is set to 150%, 77% at 200%. Page zoom is not pinch
+   zoom — it shrinks the LAYOUT viewport in CSS pixels, so a fixed-px logo
+   simply takes over. Older readers use that setting routinely.
+
+   Capping to a share of the width holds the coin at roughly a third of the
+   screen at any zoom, and leaves desktop untouched (46vw of 1200px is far more
+   than 260px, so the min() picks 260px).
+
+   Reach is what actually matters for collisions — the ring hangs up and left
+   past the corner, so only about 73% of it is on screen. Overhang is how far
+   that reaches below the header, which is what the page banners must clear. */
+:root {
+  --jc-lg-circle: min(260px, 46vw);
+  --jc-sm-circle: min(200px, 46vw);
+  --jc-coin-reach: calc(var(--jc-lg-circle) * 0.73);
+  --jc-coin-overhang: max(0px, calc(var(--jc-coin-reach) - 120px));
+}
+
+@media (max-width: 450px) {
+  :root {
+    --jc-coin-reach: calc(var(--jc-sm-circle) * 0.75);
+    --jc-coin-overhang: max(0px, calc(var(--jc-coin-reach) - 90px));
+  }
+}
+
 /* ── Form banner vs the corner coin ──────────────────────────────────────
    The coin logo is absolutely positioned at top:-70px inside a 120px header,
    so its 260px gold ring reaches 190px across and hangs 70px BELOW the header
@@ -765,7 +793,7 @@
   #main-content .form-banner,
   #main-content .donate-banner,
   #main-content .transparency__banner {
-    padding-left: 200px;
+    padding-left: calc(var(--jc-coin-reach) + 1rem);
   }
 }
 
@@ -774,7 +802,9 @@
   #main-content .donate-banner,
   #main-content .transparency__banner {
     padding-left: 2rem;
-    /* Coin reaches 150px and hangs 60px below the 90px mobile header. */
-    padding-top: calc(1.25rem + 60px);
+    /* Below the coin rather than beside it — and by exactly how far it hangs,
+       which is now zero once the viewport is narrow enough that the coin has
+       scaled down to fit. */
+    padding-top: calc(1.25rem + var(--jc-coin-overhang));
   }
 }
