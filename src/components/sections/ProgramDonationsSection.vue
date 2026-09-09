@@ -104,7 +104,7 @@ const donateDefaults: Required<Omit<CardData, 'enabled'>> = {
 
 @media (max-width: 640px) {
   .program-donations__cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

@@ -223,7 +223,7 @@ const showCampaignOverlay = computed(() => !!campaign.value && !isRecurring.valu
 
 @media (max-width: 600px) {
   .one-time-gift__campaign-options {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .one-time-gift__divider {
     padding: 0.25rem 0;

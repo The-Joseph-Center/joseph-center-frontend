@@ -63,6 +63,7 @@ function cardImageUrl(img: ImageWithAlt): string {
 
 <style scoped>
 .blog-post-card {
+  min-width: 0;
   border: 1px solid var(--color-border, #e0d8c5);
   border-radius: var(--radius-card, 0.5rem);
   overflow: hidden;

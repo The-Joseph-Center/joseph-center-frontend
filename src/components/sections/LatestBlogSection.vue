@@ -157,7 +157,7 @@ function cardImageUrl(img: ImageWithAlt): string {
 
 .latest-blog__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.75rem;
   list-style: none;
   padding: 0;
@@ -179,6 +179,10 @@ function cardImageUrl(img: ImageWithAlt): string {
 .latest-blog__card {
   display: flex;
   flex-direction: column;
+  /* Grid items default to min-width:auto and will not shrink below their
+     content, overflowing the track even after minmax(0, 1fr) lets the track
+     itself shrink. Both are needed. */
+  min-width: 0;
   height: 100%;
   background: white;
   border: 1px solid var(--color-border, #e0d8c5);

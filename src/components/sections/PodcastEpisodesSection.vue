@@ -330,7 +330,7 @@ function youtubeUrl(videoId?: string | null) {
 
 .podcast__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.5rem;
 }
 
@@ -397,19 +397,19 @@ function youtubeUrl(videoId?: string | null) {
 
 @media (max-width: 768px) {
   .podcast__featured {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .podcast__featured-info {
     padding: 1.25rem;
   }
   .podcast__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 480px) {
   .podcast__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

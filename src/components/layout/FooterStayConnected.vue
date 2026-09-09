@@ -90,7 +90,7 @@ const { isPresentOnPage } = useStayConnectedPresence();
   max-width: 72rem;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   align-items: center;
 }

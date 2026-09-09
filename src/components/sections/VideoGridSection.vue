@@ -83,7 +83,7 @@ const { data: videos, loading } = useSanity<TestimonialVideo[]>(query);
 
 .video-grid__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
 }
 
@@ -95,7 +95,7 @@ const { data: videos, loading } = useSanity<TestimonialVideo[]>(query);
 
 @media (max-width: 480px) {
   .video-grid__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

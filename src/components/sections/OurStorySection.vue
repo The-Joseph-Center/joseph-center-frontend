@@ -62,7 +62,7 @@ const bandColor   = computed(() => props.section?.bandColor ?? 'gold');
 /* No video yet — collapse to a single centered column instead of leaving an
    empty 16:9 well. Setting a videoId in Studio restores the two-up split. */
 .our-story--no-video {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   max-width: 680px;
   text-align: center;
 }
@@ -103,7 +103,7 @@ const bandColor   = computed(() => props.section?.bandColor ?? 'gold');
 
 @media (max-width: 768px) {
   .our-story {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
   .our-story__copy {

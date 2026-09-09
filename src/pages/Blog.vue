@@ -164,7 +164,7 @@ const rest = computed<FeedItem[]>(() => feed.value.slice(1));
 
 .blog-page__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.75rem;
 }
 

@@ -230,7 +230,7 @@ const groups = computed<Group[]>(() => {
 
 .people-grid__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   /* Cards size to their own content. Without this a photoless card would still
      stretch to match the tallest in its row, so collapsing the photo would just
@@ -246,7 +246,7 @@ const groups = computed<Group[]>(() => {
 
 @media (max-width: 480px) {
   .people-grid__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

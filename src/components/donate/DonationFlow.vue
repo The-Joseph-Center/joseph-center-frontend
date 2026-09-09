@@ -731,7 +731,7 @@ watch(campaignSlug, loadContext);
 @media (max-width: 600px) {
   .form-row,
   .form-row:has(> :nth-child(3)) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

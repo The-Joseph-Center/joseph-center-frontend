@@ -187,7 +187,7 @@ const { form, submitting, submitted, error, needsPhone, handleSubmit } =
 
 @media (max-width: 768px) {
   .stay-connected__inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
   }
   .stay-connected__fields {

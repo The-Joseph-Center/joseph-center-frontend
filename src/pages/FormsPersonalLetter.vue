@@ -326,7 +326,7 @@ async function handleSubmit() {
 @media (max-width: 560px) {
   .form-row--2col,
   .form-row--city {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

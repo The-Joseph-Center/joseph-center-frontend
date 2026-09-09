@@ -524,7 +524,7 @@ async function handleSubmit() {
 .form-field:last-child { margin-bottom: 0; }
 
 @media (max-width: 600px) {
-  .form-row { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: minmax(0, 1fr); }
 }
 
 .checkbox-row {

@@ -109,7 +109,7 @@ const resourcesDefaults: Required<Omit<CardData, 'enabled'>> = {
 
 @media (max-width: 640px) {
   .program-resources__cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

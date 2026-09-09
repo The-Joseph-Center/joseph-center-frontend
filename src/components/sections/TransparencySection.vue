@@ -679,7 +679,7 @@ const { data: reports } = useSanity<AnnualReport[]>(query);
 
 @media (max-width: 720px) {
   .alloc__body {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
   .alloc__figure {

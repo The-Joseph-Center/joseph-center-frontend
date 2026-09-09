@@ -271,7 +271,7 @@ function formatDate(dateStr?: string | null) {
 
 @media (max-width: 720px) {
   .latest-coffee__card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
 

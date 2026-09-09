@@ -149,7 +149,7 @@ watch(() => props.programSlug, (slug) => { if (slug) fetchStaff(slug); }, { imme
     padding: 3rem 1.25rem;
   }
   .program-staff__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

@@ -318,7 +318,7 @@ const platformLabels: Record<string, string> = {
   max-width: 72rem;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2rem;
 }
 
@@ -489,7 +489,7 @@ const platformLabels: Record<string, string> = {
 /* ─── Responsive ─── */
 @media (max-width: 1023px) {
   .jc-footer__columns {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -506,7 +506,7 @@ const platformLabels: Record<string, string> = {
 
 @media (max-width: 767px) {
   .jc-footer__columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
 }

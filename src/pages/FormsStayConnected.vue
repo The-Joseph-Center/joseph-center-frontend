@@ -333,7 +333,7 @@ const { form, submitting, submitted, error, needsPhone, handleSubmit } =
 @media (max-width: 560px) {
   .stay-form__options,
   .form-row--2col {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

@@ -85,7 +85,7 @@ const hasVideos = computed(() => (props.videos?.length ?? 0) > 0);
 
 @media (max-width: 768px) {
   .program-testimonials__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

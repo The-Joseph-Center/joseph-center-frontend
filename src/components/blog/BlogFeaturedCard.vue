@@ -174,7 +174,7 @@ const ctaLabel = computed<string>(() => {
 
 .featured-card__link {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   text-decoration: none;
   color: inherit;
 }
