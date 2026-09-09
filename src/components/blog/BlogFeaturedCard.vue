@@ -245,7 +245,12 @@ const ctaLabel = computed<string>(() => {
 
 .featured-card__title {
   font-family: var(--font-heading);
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  /* 2.4vw never engaged — at 195px it computes to 4.7px, so the 1.5rem floor
+     always won and "Ecosystem" overflowed the card. The vw term now tracks the
+     viewport, and the title is editable in Sanity so a long word gets a
+     visible break rather than being silently clipped. */
+  font-size: clamp(1.125rem, 6vw, 2rem);
+  overflow-wrap: break-word;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
