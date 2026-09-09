@@ -284,15 +284,20 @@ onBeforeUnmount(() => {
   background: var(--jc-gold);
 }
 
+/* Insets are ratios, not fixed pixels. As fixed 40px/80px they kept a 20px
+   band whatever the coin's size, so once the coin scaled with the viewport the
+   bands ate it: at 200% zoom the coin is 90px and the inner circle collapsed to
+   9.7px, leaving an 8px logo. 0.846 and 0.692 are the original 220/260 and
+   180/260, so the full-size coin is unchanged to the pixel. */
 .jc-coin__ring--dark {
-  width: calc(var(--jc-lg-circle) - 40px);
-  height: calc(var(--jc-lg-circle) - 40px);
+  width: calc(var(--jc-lg-circle) * 0.846);
+  height: calc(var(--jc-lg-circle) * 0.846);
   background: var(--jc-darkgreen);
 }
 
 .jc-coin__ring--green {
-  width: calc(var(--jc-lg-circle) - 80px);
-  height: calc(var(--jc-lg-circle) - 80px);
+  width: calc(var(--jc-lg-circle) * 0.692);
+  height: calc(var(--jc-lg-circle) * 0.692);
   background: var(--jc-green);
 }
 
@@ -300,16 +305,20 @@ onBeforeUnmount(() => {
   width: 85%;
   height: 85%;
   object-fit: contain;
-  /* Nudge image right + down to optically center within the visible
-     portion of the coin (rings overflow ~70px past the top-left corner). */
-  transform: translate(8px, 8px);
+  /* Nudge right + down to optically centre within the visible portion of the
+     coin, which overflows past the top-left corner. Proportional for the same
+     reason as the insets: a fixed 8px against a 9.7px inner circle moved the
+     logo a full circle-width off centre, which is the drift in the 175% and
+     200% screenshots. 0.031 is the original 8/260. */
+  transform: translate(calc(var(--jc-lg-circle) * 0.031), calc(var(--jc-lg-circle) * 0.031));
 }
 
 @media (max-width: 450px) {
+  /* 0.8 and 0.6 are the original 160/200 and 120/200. */
   .jc-coin__ring--gold  { width: var(--jc-sm-circle); height: var(--jc-sm-circle); }
-  .jc-coin__ring--dark  { width: calc(var(--jc-sm-circle) - 40px); height: calc(var(--jc-sm-circle) - 40px); }
-  .jc-coin__ring--green { width: calc(var(--jc-sm-circle) - 80px); height: calc(var(--jc-sm-circle) - 80px); }
-  .jc-coin__img { transform: translate(6px, 6px); }
+  .jc-coin__ring--dark  { width: calc(var(--jc-sm-circle) * 0.8); height: calc(var(--jc-sm-circle) * 0.8); }
+  .jc-coin__ring--green { width: calc(var(--jc-sm-circle) * 0.6); height: calc(var(--jc-sm-circle) * 0.6); }
+  .jc-coin__img { transform: translate(calc(var(--jc-sm-circle) * 0.03), calc(var(--jc-sm-circle) * 0.03)); }
 }
 
 /* ── Right-side actions ──────────────────────────────────────────────── */
