@@ -736,3 +736,37 @@
   .prose-cta strong { font-weight: 600; }
   .prose-cta a { color: var(--color-primary); text-decoration: underline; }
 }
+
+/* ── Form banner vs the corner coin ──────────────────────────────────────
+   The coin logo is absolutely positioned at top:-70px inside a 120px header,
+   so its 260px gold ring reaches 190px across and hangs 70px BELOW the header
+   — straight into the top of #main-content, which is exactly where the green
+   `.form-banner` sits on the form, blog and resources pages.
+
+   Wide screens are fine: a centred title starts well right of 190px. It only
+   collides once the viewport drops under roughly 630px, where the centred
+   text slides beneath the coin.
+
+   Two different answers, because one does not fit both:
+     • tablet — reserve the coin's footprint on the left and let the title
+       centre in what remains; there is enough width for them to sit
+       side by side.
+     • phone — there is not, so the title drops below the coin instead of
+       being squeezed into ~180px and wrapping.
+
+   Declared here rather than in ten page components: `.form-banner` is defined
+   identically in all ten, and the #main-content prefix is what lets a global
+   rule outrank a scoped `.form-banner[data-v-…]`. */
+@media (max-width: 700px) {
+  #main-content .form-banner {
+    padding-left: 200px;
+  }
+}
+
+@media (max-width: 450px) {
+  #main-content .form-banner {
+    padding-left: 2rem;
+    /* Coin reaches 150px and hangs 60px below the 90px mobile header. */
+    padding-top: calc(1.25rem + 60px);
+  }
+}
