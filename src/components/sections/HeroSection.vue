@@ -69,7 +69,7 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
   >
     <SiteAmbience variant="hero" />
     <div class="relative z-10 text-white max-w-3xl" :class="textClasses">
-      <h1 v-if="section?.title || site.name" class="text-5xl font-extrabold leading-tight mb-4 text-white whitespace-pre-line">{{ section?.title || site.name }}</h1>
+      <h1 v-if="section?.title || site.name" class="hero__title font-extrabold leading-tight mb-4 text-white whitespace-pre-line">{{ section?.title || site.name }}</h1>
       <p v-if="section?.subtitle || site.tagline" class="hero__subtitle">{{ section?.subtitle || site.tagline }}</p>
       <SmartLink v-if="section?.cta?.label && section?.cta?.url" :to="section.cta.url" class="focus-ring-light inline-block border-2 border-white text-white font-semibold px-8 py-3 rounded-lg hover:bg-white hover:text-[var(--color-primary)] transition-colors">{{ section.cta.label }}</SmartLink>
     </div>
@@ -81,6 +81,25 @@ onUnmounted(() => { heroRef.value?.removeEventListener('mousemove', onHeroMouseM
 </template>
 
 <style scoped>
+/* The headline was a fixed 48px (Tailwind text-5xl), which never shrank with
+   the viewport. Browser page zoom shrinks the layout viewport in CSS pixels, so
+   at 150% "Empowering" needed 298px in a 212px space and at 200% it needed 298
+   in 147 — and because the hero is overflow-hidden it was clipped off the left
+   edge rather than scrolling. It is a single word, so wrapping cannot save it;
+   the size has to come down.
+
+   11vw tracks the viewport, the 3rem ceiling keeps desktop exactly as it was,
+   and the floor is low enough to survive 200% zoom on a small phone — where
+   everything is magnified anyway, so a smaller CSS size still reads large. */
+.hero__title {
+  font-size: clamp(1.1rem, 11vw, 3rem);
+  /* The headline is editable in Sanity, so the longest word is not fixed. If a
+     future title has one longer than the fluid size can accommodate, break it
+     rather than let overflow-hidden swallow it — an awkward break is visible
+     and fixable, a silently clipped word is neither. */
+  overflow-wrap: break-word;
+}
+
 .hero {
   --cursor-x: 50%;
   --cursor-y: 40%;
