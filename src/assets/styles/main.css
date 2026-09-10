@@ -407,20 +407,6 @@
    ============================================================ */
 
 @layer components {
-  /* Page zoom shrinks the layout viewport, so a nowrap label eventually cannot
-     fit however short it is. Below this width the label wraps and the side
-     padding tightens; above it, buttons behave exactly as before. */
-  @media (max-width: 450px) {
-    .btn-primary,
-    .btn-secondary,
-    .btn-outline,
-    .btn-ghost {
-      white-space: normal;
-      padding-left: clamp(0.75rem, 5vw, 2rem);
-      padding-right: clamp(0.75rem, 5vw, 2rem);
-      text-align: center;
-    }
-  }
 
 
   /* ── Buttons ─────────────────────────────────────────── */
@@ -519,6 +505,7 @@
   /* Outline gold — used in header Volunteer button */
   .btn-outline-gold {
     display: inline-flex;
+    max-width: 100%;
     align-items: center;
     justify-content: center;
     padding: 0.375rem 1.125rem;
@@ -585,6 +572,30 @@
   .btn-ghost--on-dark:hover {
     background-color: white;
     color: var(--color-authority);
+  }
+
+  /* Buttons at a narrow viewport.
+     Declared after every .btn-* rule above, not before: media queries add no
+     specificity, so an earlier `white-space: normal` simply loses to the later
+     `white-space: nowrap` and does nothing. That is what let the label keep
+     breaking out of the button at 175% and 200%.
+
+     Page zoom shrinks the layout viewport, so a nowrap label eventually cannot
+     fit however short it is. Below this width the label wraps and the side
+     padding tightens; above it, buttons behave exactly as before. */
+  @media (max-width: 450px) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline,
+    .btn-outline-gold,
+    .btn-ghost {
+      white-space: normal;
+      text-align: center;
+      padding-left: clamp(0.75rem, 5vw, 2rem);
+      padding-right: clamp(0.75rem, 5vw, 2rem);
+      /* A single word longer than the button still has to give way. */
+      overflow-wrap: break-word;
+    }
   }
 
   /* ── Section container ───────────────────────────────── */
