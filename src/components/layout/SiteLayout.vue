@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
 import SiteHeader from './SiteHeader.vue';
 import SiteFooter from './SiteFooter.vue';
 import DonateFab from '@/components/donate/DonateFab.vue';
@@ -19,11 +18,6 @@ const site = useSiteStore();
 // Publishes the visible viewport so fixed chrome can follow a pinch-zoom
 // instead of anchoring to a layout viewport the reader can no longer see.
 useVisualViewport();
-
-// The donate page is already the donate button — the floating one there is
-// only a second way to the place the reader is standing.
-const route = useRoute();
-const showDonateFab = computed(() => route.name !== 'Donate');
 
 // ── Site Settings ──
 import type { SanityImageSource } from '@/types/site';
@@ -148,7 +142,7 @@ const ready = computed(() => !settingsLoading.value && !navLoading.value);
       <slot />
     </div>
     <SiteFooter />
-    <DonateFab v-if="showDonateFab" />
+    <DonateFab />
     <DonateModal />
   </div>
 </template>
