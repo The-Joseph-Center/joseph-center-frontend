@@ -236,4 +236,20 @@ const router = createRouter({
   },
 });
 
+// A deploy replaces every hashed page chunk, and Netlify answers a request for
+// a chunk that no longer exists with index.html. A tab opened before the
+// deploy then cannot load the next page and the click silently does nothing.
+// Load the destination fresh instead — once, so a genuinely broken chunk
+// cannot loop.
+const CHUNK_FAILURE = /dynamically imported module|Importing a module script failed|module script|Unable to preload CSS/i;
+router.onError((err, to) => {
+  if (!CHUNK_FAILURE.test(String((err as Error)?.message ?? err))) return;
+  const key = `jc-chunk-reload:${to.fullPath}`;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch { /* storage blocked — reloading once is still the right call */ }
+  window.location.assign(to.fullPath);
+});
+
 export default router;
