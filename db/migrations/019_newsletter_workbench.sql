@@ -1,0 +1,11 @@
+-- The materials a newsletter is built from, not just the copy it produced.
+--
+-- The transcript, the writer's notes and the corrected fact sheet are what the
+-- drafting tool works from, and they took real effort to assemble — dropping
+-- four caption files in, reading the fact sheet, fixing who was where. Until
+-- now they lived in the page and were gone on a refresh or a change of month,
+-- so a half-finished newsletter could not actually be put down and picked up.
+--
+-- One JSON blob rather than a column each: these are working materials with no
+-- query or constraint on them, and the shape will keep moving as the tool does.
+ALTER TABLE newsletters ADD COLUMN workbench TEXT;
