@@ -83,8 +83,12 @@ export const handler: Handler = async (event) => {
       console.error('submit-dynamic-form: failed to persist the form submission:', dbErr);
     }
 
-    // Notify staff
-    if (form.notifyEmail) {
+    // Notify staff.
+    //
+    // A seasonal sign-up is set to a weekly summary instead: what the person
+    // running it needs is the list on a Friday, not a ping per family. The
+    // dashboard's form-digest sends those, so this stays quiet.
+    if (form.notifyEmail && form.notifyMode !== 'weekly') {
       const summary = Object.entries(data)
         .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
         .join('\n');
