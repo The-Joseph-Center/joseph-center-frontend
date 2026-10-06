@@ -116,6 +116,10 @@ const routes = [
     name: 'Volunteer Form',
     component: FormsVolunteer,
   },
+  // Short address for the same form. /forms/volunteer stays the canonical one
+  // — it is what the brand reference, the newsletter and the footer all point
+  // at — so this redirects rather than rendering a second copy at a second URL.
+  { path: '/volunteer', redirect: '/forms/volunteer' },
   {
     path: '/forms/referral',
     name: 'Referral Form',

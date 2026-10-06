@@ -20,6 +20,15 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# A short address for the volunteer form, for print and for saying out loud.
+# Server-side as well as in the router, so a crawler or a direct hit is sent on
+# rather than being served the app and redirected afterwards.
+[[redirects]]
+  from = "/volunteer"
+  to = "/forms/volunteer"
+  status = 301
+  force = true
+
 # Legacy program slug — preserve any external links to the old IFS URL
 [[redirects]]
   from = "/programs/financial-services"
