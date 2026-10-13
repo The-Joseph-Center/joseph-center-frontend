@@ -101,7 +101,7 @@ watch([event, loading], ([val, isLoading]) => {
 
 watchEffect(() => {
   if (!event.value) return;
-  const dateStr = formatEventDate(event.value.date)?.full ?? '';
+  const dateStr = formatEventDate(event.value.date) ?? '';
   useHead({
     title: `${event.value.title} — The Joseph Center`,
     meta: [
@@ -113,7 +113,7 @@ watchEffect(() => {
   });
 });
 
-const formattedDate = computed(() => formatEventDate(event.value?.date)?.full ?? null);
+const formattedDate = computed(() => formatEventDate(event.value?.date));
 
 const externalCta = computed(() => {
   const href = event.value?.ctaHref;

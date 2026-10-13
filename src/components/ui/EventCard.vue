@@ -14,7 +14,7 @@ const props = defineProps<{
   detailSlug?: string | null;
 }>();
 
-const formattedDate = computed(() => formatEventDate(props.date)?.full ?? null);
+const formattedDate = computed(() => formatEventDate(props.date));
 
 const detailHref = computed(() =>
   props.detailSlug ? `/events/${props.detailSlug}` : null
