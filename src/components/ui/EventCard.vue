@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { PortableText } from '@portabletext/vue';
 import type { TypedObject } from '@portabletext/types';
 import SmartLink from '@/components/ui/SmartLink.vue';
+import { formatEventDate } from '@/utils/eventDate';
 
 const props = defineProps<{
   title: string;
@@ -13,17 +14,7 @@ const props = defineProps<{
   detailSlug?: string | null;
 }>();
 
-const formattedDate = computed(() => {
-  if (!props.date) return null;
-  const d = new Date(props.date);
-  if (isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-});
+const formattedDate = computed(() => formatEventDate(props.date)?.full ?? null);
 
 const detailHref = computed(() =>
   props.detailSlug ? `/events/${props.detailSlug}` : null

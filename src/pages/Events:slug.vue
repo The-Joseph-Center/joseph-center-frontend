@@ -7,6 +7,7 @@ import type { TypedObject } from '@portabletext/types';
 import HeroSection from '@/components/sections/HeroSection.vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 import { sanityImage } from '@/composables/useSanityImage';
+import { formatEventDate } from '@/utils/eventDate';
 import type { SanityImageSource } from '@/types/site';
 
 interface Sponsor {
@@ -100,13 +101,7 @@ watch([event, loading], ([val, isLoading]) => {
 
 watchEffect(() => {
   if (!event.value) return;
-  const dateStr = event.value.date
-    ? new Date(event.value.date).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : '';
+  const dateStr = formatEventDate(event.value.date)?.full ?? '';
   useHead({
     title: `${event.value.title} — The Joseph Center`,
     meta: [
@@ -118,20 +113,7 @@ watchEffect(() => {
   });
 });
 
-const formattedDate = computed(() => {
-  if (!event.value?.date) return null;
-  const d = new Date(event.value.date);
-  if (isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  });
-});
+const formattedDate = computed(() => formatEventDate(event.value?.date)?.full ?? null);
 
 const externalCta = computed(() => {
   const href = event.value?.ctaHref;
