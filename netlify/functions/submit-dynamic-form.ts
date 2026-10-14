@@ -94,7 +94,10 @@ export const handler: Handler = async (event) => {
         .join('\n');
       await resend.emails.send({
         from: process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev',
-        to: [form.notifyEmail],
+        // Several people may share a form. The field is one line, so they get
+        // typed in with commas; Resend wants them as separate addresses and
+        // rejects the whole send if handed "a@x.org, b@x.org" as one.
+        to: form.notifyEmail.split(/[,;]/).map((a: string) => a.trim()).filter(Boolean),
         subject: `New ${form.title} submission`,
         text: summary,
       });
