@@ -61,14 +61,16 @@ export const handler: Handler = async (event) => {
     let capacity = capStatus(form.cap, 0);
     if (capacity.capped) {
       try {
-        const { recorded } = await countRecorded(turso, slug, form.cap?.countField);
-        capacity = capStatus(form.cap, recorded);
+        const count = await countRecorded(
+          turso, slug, form.cap?.countField, form.cap?.estimateField
+        );
+        capacity = capStatus(form.cap, count);
       } catch (dbErr) {
         // A form that cannot be counted stays open. Refusing everyone because
         // the database is unreachable would turn an outage into a closed
         // sign-up, and submit-dynamic-form checks again anyway.
         console.error('get-form: could not count submissions, leaving the form open:', dbErr);
-        capacity = { ...capacity, capped: false, full: false };
+        capacity = { ...capacity, capped: false, enforced: false, full: false };
       }
     }
 

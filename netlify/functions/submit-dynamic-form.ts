@@ -79,8 +79,10 @@ export const handler: Handler = async (event) => {
      */
     if (form.cap?.limit) {
       try {
-        const { recorded } = await countRecorded(turso, slug, form.cap.countField);
-        const capacity = capStatus(form.cap, recorded);
+        const count = await countRecorded(
+          turso, slug, form.cap.countField, form.cap.estimateField
+        );
+        const capacity = capStatus(form.cap, count);
         if (atCapacity(capacity)) {
           return {
             statusCode: 403,
