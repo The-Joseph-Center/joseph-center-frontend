@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions';
 import { createClient as createSanityClient } from '@sanity/client';
 import { createClient as createTursoClient } from '@libsql/client/web';
 import { Resend } from 'resend';
+import { atCapacity, capStatus, countRecorded } from './_lib/form-cap';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -60,6 +61,41 @@ export const handler: Handler = async (event) => {
       }
       if (form.activeDates.end && new Date(form.activeDates.end).getTime() < now) {
         return { statusCode: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Form has closed' }) };
+      }
+    }
+
+    /**
+     * Is it full?
+     *
+     * Checked here and not only in get-form, because the page may have been
+     * open since before the last place went and because nothing stops a POST
+     * arriving without one. Checked *before* the required-field validation so
+     * that a full form says so rather than first asking somebody to go back and
+     * complete a field on a sign-up that cannot be accepted.
+     *
+     * A cap that cannot be counted does not refuse anyone. An unreachable
+     * database is our problem, not a reason to turn a family away, and
+     * overshooting a soft limit is recoverable in a way a lost sign-up is not.
+     */
+    if (form.cap?.limit) {
+      try {
+        const { recorded } = await countRecorded(turso, slug, form.cap.countField);
+        const capacity = capStatus(form.cap, recorded);
+        if (atCapacity(capacity)) {
+          return {
+            statusCode: 403,
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              error: 'This sign-up is full',
+              full: true,
+              message:
+                form.cap.fullMessage ||
+                'We have reached the number of children we are able to serve this year. Thank you — please call us and we will do what we can.',
+            }),
+          };
+        }
+      } catch (dbErr) {
+        console.error('submit-dynamic-form: could not check the cap, accepting the submission:', dbErr);
       }
     }
 

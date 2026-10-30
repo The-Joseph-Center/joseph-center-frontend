@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { useSanity } from '@/composables/useSanity';
+import { computed, onMounted, reactive, ref } from 'vue';
 import SmartLink from '@/components/ui/SmartLink.vue';
 
 type FieldType = 'text' | 'email' | 'phone' | 'number' | 'textarea' | 'select';
@@ -19,6 +18,14 @@ interface ActiveDates {
   end?: string | null;
 }
 
+interface Capacity {
+  capped: boolean;
+  limit: number;
+  counted: number;
+  remaining: number;
+  full: boolean;
+}
+
 interface DynamicForm {
   title?: string;
   active?: boolean;
@@ -26,16 +33,35 @@ interface DynamicForm {
   description?: string;
   fields?: FormField[];
   successMessage?: string;
+  cap?: { fullMessage?: string } | null;
+  capacity?: Capacity | null;
 }
 
 const props = defineProps<{ formSlug: string }>();
 
-const query = `*[_type == "dynamicForm" && slug.current == $slug][0]{
-  title, active, activeDates, description, fields, successMessage
-}`;
+/**
+ * Asked of the function, not of Sanity directly.
+ *
+ * A capped form's state is the sum of its submissions, which live in Turso,
+ * and the CDN would serve a cached answer besides. get-form reads both and
+ * applies exactly the rule submit-dynamic-form enforces, so the page cannot
+ * offer a form that the submit will refuse.
+ */
+const form = ref<DynamicForm | null>(null);
+const loading = ref(true);
 
-const { data: form, loading } = useSanity<DynamicForm>(query, {
-  slug: props.formSlug,
+onMounted(async () => {
+  try {
+    const res = await fetch(
+      `/.netlify/functions/get-form?slug=${encodeURIComponent(props.formSlug)}`
+    );
+    if (res.ok) form.value = await res.json();
+  } catch {
+    // Leaves the unavailable message in place, which is the safe thing to show
+    // when we cannot say whether the form is open.
+  } finally {
+    loading.value = false;
+  }
 });
 
 const submitting = ref(false);
@@ -46,6 +72,8 @@ const values = reactive<Record<string, string | number>>({});
 const isOpen = computed(() => {
   if (!form.value) return false;
   if (form.value.active === false) return false;
+  // Full is closed, whatever the dates say.
+  if (form.value.capacity?.full) return false;
   const dates = form.value.activeDates;
   if (!dates) return true;
   const now = Date.now();
@@ -62,6 +90,12 @@ const isOpen = computed(() => {
 
 const unavailableMessage = computed(() => {
   if (!form.value) return '';
+  if (form.value.capacity?.full) {
+    return (
+      form.value.cap?.fullMessage ||
+      'We have reached the number of children we are able to serve this year. Thank you — please call us and we will do what we can.'
+    );
+  }
   if (form.value.active === false) {
     return 'This form is not currently available.';
   }
@@ -135,7 +169,18 @@ async function handleSubmit() {
       }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}) as { error?: string });
+      const body = await res.json().catch(() => ({}) as { error?: string; full?: boolean; message?: string });
+      // The last place went while this page was open. Say the sentence written
+      // for that, and take the form down rather than leaving it there inviting
+      // a second attempt that will be refused the same way.
+      if ((body as { full?: boolean }).full && form.value) {
+        form.value = {
+          ...form.value,
+          capacity: { capped: true, limit: 0, counted: 0, remaining: 0, full: true },
+          cap: { fullMessage: (body as { message?: string }).message },
+        };
+        return;
+      }
       throw new Error((body as { error?: string }).error || `Server error: ${res.status}`);
     }
     submitted.value = true;
