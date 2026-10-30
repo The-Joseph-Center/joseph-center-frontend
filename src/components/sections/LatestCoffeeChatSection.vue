@@ -7,6 +7,8 @@ interface Section {
   heading?: string;
   subtext?: string;
   ctaLabel?: string;
+  showGuestCta?: boolean;
+  guestCtaLabel?: string;
 }
 
 interface Episode {
@@ -30,6 +32,20 @@ const subtext = computed(
     'Honest conversations about hope, homelessness, and the people The Joseph Center is honored to serve.'
 );
 const ctaLabel = computed(() => props.section?.ctaLabel || 'Watch All Episodes →');
+
+/**
+ * The guest application, beside the episodes button.
+ *
+ * Until now the only way to reach /media/apply was to already be on the Media
+ * page, which is backwards: the people worth asking are the ones who have just
+ * watched someone else's story, and most of them meet Coffee Chat on the home
+ * page. Shown unless a section explicitly switches it off, so existing section
+ * documents get it without anyone editing them.
+ */
+const showGuestCta = computed(() => props.section?.showGuestCta !== false);
+const guestCtaLabel = computed(
+  () => props.section?.guestCtaLabel || 'Be a guest on Coffee Chat →'
+);
 
 const query = `*[_type == "coffeeEpisode"] | order(publishedAt desc)[0]{
   _id, videoId, title, description, publishedAt, thumbnailUrl, episodeNumber
@@ -65,7 +81,12 @@ function formatDate(dateStr?: string | null) {
 
       <div v-else-if="!episode" class="latest-coffee__state">
         <p>New episodes coming soon.</p>
-        <SmartLink to="/media" class="btn-primary">{{ ctaLabel }}</SmartLink>
+        <div class="latest-coffee__cta">
+          <SmartLink to="/media" class="btn-primary">{{ ctaLabel }}</SmartLink>
+          <SmartLink v-if="showGuestCta" to="/media/apply" class="btn-secondary">
+            {{ guestCtaLabel }}
+          </SmartLink>
+        </div>
       </div>
 
       <div v-else class="latest-coffee__body">
@@ -112,6 +133,9 @@ function formatDate(dateStr?: string | null) {
 
         <div class="latest-coffee__cta">
           <SmartLink to="/media" class="btn-primary">{{ ctaLabel }}</SmartLink>
+          <SmartLink v-if="showGuestCta" to="/media/apply" class="btn-secondary">
+            {{ guestCtaLabel }}
+          </SmartLink>
         </div>
       </div>
     </div>
@@ -266,6 +290,10 @@ function formatDate(dateStr?: string | null) {
 .latest-coffee__cta {
   display: flex;
   justify-content: center;
+  align-items: center;
+  /* Two buttons now, so they wrap rather than squeeze on a narrow screen. */
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
   margin-top: 1.5rem;
 }
 

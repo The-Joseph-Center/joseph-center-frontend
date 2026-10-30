@@ -17,17 +17,26 @@ interface BannerDoc {
 // Only an active banner, and only inside its scheduled window. coalesce to true
 // so docs predating the active field still show.
 //
-// The ordering matters: this takes [0] of the matches, and with more than one
-// banner document that used to be whichever Sanity happened to return first.
-// Most recently edited wins, so "the one I just turned on" is the one visitors
-// see. The dashboard also switches the others off when one is activated, but
-// the site should not depend on that having worked.
+// The ordering matters, because this takes [0] of the matches and two banners
+// can legitimately be live at once — a closure during a month-long campaign is
+// the ordinary case, not a mistake. The one that ends soonest wins: a notice
+// with a near end date is a closure or a deadline, and a campaign running for
+// weeks can afford to wait its turn. A banner with no end date sorts last, so
+// "until somebody turns it off" never outranks something time-boxed.
+//
+// This used to be most-recently-edited, which decided it by whoever had last
+// opened Studio — editing the Angel Tree wording mid-campaign would quietly
+// displace the Thanksgiving closure notice.
+//
+// The dashboard also switches off any banner sharing a window with one being
+// posted, but the site does not depend on that having worked.
+const FAR_FUTURE = '9999-12-31T23:59:59Z';
 const query = `*[
   _type == "banner"
   && coalesce(active, true) == true
   && (!defined(startsAt) || startsAt <= now())
   && (!defined(endsAt) || endsAt >= now())
-] | order(_updatedAt desc) [0]{
+] | order(coalesce(endsAt, "${FAR_FUTURE}") asc, _updatedAt desc) [0]{
   _id, _updatedAt, title, message, active, startsAt, endsAt
 }`;
 
