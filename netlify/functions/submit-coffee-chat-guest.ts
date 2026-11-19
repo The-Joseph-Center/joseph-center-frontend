@@ -3,8 +3,23 @@ import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 
 // Persists Coffee Chat with Mona guest applications to the
-// coffee_chat_applications Turso table (see 004_coffee_chat_applications.sql).
-// Optionally sends a Resend notification to staff when CONTACT_TO_EMAIL is set.
+// coffee_chat_applications Turso table (see 004_coffee_chat_applications.sql)
+// and notifies the one person who books the guests.
+//
+// WHO IS TOLD, AND WHY IT IS NOT THE CONTACT INBOX
+//
+// This used to send to CONTACT_TO_EMAIL, the general contact address, which is
+// read by the front desk among others. The dashboard restricts this form's
+// inbox to two groups on purpose — an application asks about ongoing legal
+// matters and about difficult subjects the applicant may be willing to discuss
+// on camera — and emailing the full text to a shared address quietly undid
+// that. It now goes to one named person, and deliberately does NOT fall back
+// to CONTACT_TO_EMAIL: a missing variable should mean nobody new is told,
+// not everybody.
+//
+// The notification keeps the whole application rather than a summary and a
+// link, because the database write above it is allowed to fail without failing
+// the submission. When it does, this email is the only copy that exists.
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -104,10 +119,15 @@ export const handler: Handler = async (event) => {
       console.error('submit-coffee-chat-guest: failed to persist the coffee chat application:', dbErr);
     }
 
-    if (process.env.CONTACT_TO_EMAIL) {
+    // Its own try/catch, and after the write. The application has been taken
+    // by this point; a mail failure must not turn into "Submission failed" for
+    // someone who has just filled in nine sections and signed it, because the
+    // only thing they can do with that is send it again.
+    try {
       await resend.emails.send({
         from: process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev',
-        to: [process.env.CONTACT_TO_EMAIL],
+        to: [process.env.COFFEE_CHAT_TO_EMAIL || 'ephifer@josephcentergj.com'],
+        replyTo: typeof body.email === 'string' ? body.email : undefined,
         subject: `New Coffee Chat guest application: ${body.fullName}`,
         text:
           `Name: ${body.fullName}\n` +
@@ -126,6 +146,8 @@ export const handler: Handler = async (event) => {
           `Additional info: ${body.additionalInfo ?? '—'}\n\n` +
           `Signed: ${body.signature} on ${body.signatureDate}`,
       });
+    } catch (mailErr) {
+      console.error('submit-coffee-chat-guest: saved, but could not notify:', mailErr);
     }
 
     return {
