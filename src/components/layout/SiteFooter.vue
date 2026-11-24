@@ -69,7 +69,12 @@ const fallbackColumns: { title: string; links: FooterLink[] }[] = [
       // internal and renders a RouterLink, so a relative link would navigate
       // client-side to a route that does not exist and land on the 404 page —
       // the Netlify redirect only fires on a real request to the server.
-      { label: 'Donor Portal', href: 'https://josephcentergj.com/portal' },
+      // Named for what a donor is trying to do, not for the system they land
+      // in. A monthly donor who wanted to stop emailed to ask how, having read
+      // the site — "Donor Portal" is not the phrase anyone searches a footer
+      // for when the thing they want is to cancel. Kept in step with the
+      // footerColumns document in Sanity, which is what actually renders.
+      { label: 'Manage or Stop a Monthly Gift', href: 'https://josephcentergj.com/portal' },
     ],
   },
 ];

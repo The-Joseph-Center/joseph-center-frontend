@@ -11,6 +11,16 @@ export const BRAND = {
   address1: '2511 Belford Ave #B, Grand Junction, CO 81501',
   phone: '(970) 245-4672',
   email: 'jc@josephcentergj.com',
+  /**
+   * Where a question about a DONATION goes.
+   *
+   * Separate from `email` on purpose. That one is the organisation's shared
+   * inbox and sits in the footer of every template; this one is the person who
+   * can actually look a gift up in Stripe, change an amount or stop a
+   * recurring donation. A donor asking to cancel should not have to wait for a
+   * shared inbox to route the message to them.
+   */
+  donationEmail: 'ephifer@josephcentergj.com',
   website: 'josephcentergj.com',
   /**
    * Stripe's hosted Customer Portal login page for the Joseph Center account.

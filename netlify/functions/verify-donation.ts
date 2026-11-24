@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
 import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
+import { BRAND } from './_email-templates/shared';
 import { donorOneTime } from './_email-templates/donor-one-time';
 import { donorMonthlyFirst } from './_email-templates/donor-monthly-first';
 import { donorMonthlyRecurring } from './_email-templates/donor-monthly-recurring';
@@ -120,9 +121,22 @@ async function getCampaignName(campaignId: string | null): Promise<string | null
   return (result.rows[0]?.name as string) ?? null;
 }
 
+/**
+ * Where a reply to a donation email lands.
+ *
+ * Both monthly templates invite the donor to "reply to this email", and nothing
+ * here set a reply address, so the reply went to whatever DONATION_FROM_EMAIL
+ * is — a sending identity, not an inbox anyone reads. A donor asking to stop a
+ * gift should reach the person who can stop it, which is the same address the
+ * templates print.
+ */
+const DONATION_REPLY_TO =
+  process.env.DONATION_REPLY_TO_EMAIL || BRAND.donationEmail;
+
 function donorBaseEnvelope(opts: { to: string; subject: string; html: string; text: string }) {
   return {
     from: process.env.DONATION_FROM_EMAIL || 'onboarding@resend.dev',
+    replyTo: DONATION_REPLY_TO,
     to: [opts.to],
     subject: opts.subject,
     html: opts.html,
@@ -133,6 +147,7 @@ function donorBaseEnvelope(opts: { to: string; subject: string; html: string; te
 function staffBaseEnvelope(opts: { to: string; subject: string; html: string; text: string }) {
   return {
     from: process.env.DONATION_FROM_EMAIL || 'onboarding@resend.dev',
+    replyTo: DONATION_REPLY_TO,
     to: opts.to.split(',').map((s) => s.trim()).filter(Boolean),
     subject: opts.subject,
     html: opts.html,
@@ -350,7 +365,7 @@ export const handler: Handler = async (event) => {
     }
 
     // ─── Staff notification ───────────────────────────────────────────
-    const staffTo = process.env.STAFF_DONATION_TO_EMAIL;
+    const staffTo = process.env.STAFF_DONATION_TO_EMAIL || BRAND.donationEmail;
     if (staffTo) {
       const staffRendered = staffDonation({
         firstName, lastName, email, phone, mailingAddress,
@@ -368,8 +383,6 @@ export const handler: Handler = async (event) => {
       } catch (err) {
         console.error('verify-donation: staff notification FAILED to send:', err);
       }
-    } else {
-      console.warn('STAFF_DONATION_TO_EMAIL not set — staff notification skipped');
     }
 
     // ─── AWeber sync ──────────────────────────────────────────────────
